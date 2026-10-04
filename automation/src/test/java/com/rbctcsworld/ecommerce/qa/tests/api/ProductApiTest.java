@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.api;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.AuthClient;
 import com.rbctcsworld.ecommerce.qa.api.ProductClient;
 import com.rbctcsworld.ecommerce.qa.testdata.TestData;
@@ -17,6 +19,8 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.containsStringIgnoringCase;
 
 @Tag("api")
+@Epic("Catalog")
+@Feature("Products")
 class ProductApiTest {
 
     private static final ProductClient products = new ProductClient();

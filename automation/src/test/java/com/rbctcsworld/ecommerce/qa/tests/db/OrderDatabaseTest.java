@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.db;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.CartClient;
 import com.rbctcsworld.ecommerce.qa.api.OrderClient;
 import com.rbctcsworld.ecommerce.qa.database.DatabaseUtils;
@@ -26,6 +28,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Skipped automatically when PostgreSQL is not reachable.
  */
 @Tag("db")
+@Epic("Data integrity")
+@Feature("Orders and inventory tables")
 class OrderDatabaseTest {
 
     private final CartClient cart = new CartClient();

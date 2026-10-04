@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.api;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.AdminClient;
 import com.rbctcsworld.ecommerce.qa.api.OrderClient;
 import com.rbctcsworld.ecommerce.qa.api.ProductClient;
@@ -22,6 +24,8 @@ import static org.hamcrest.Matchers.notNullValue;
  */
 @Tag("api")
 @Tag("returns")
+@Epic("Fulfillment")
+@Feature("Returns")
 class ReturnApiTest {
 
     private final OrderClient orders = new OrderClient();

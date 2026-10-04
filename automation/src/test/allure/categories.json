@@ -1,0 +1,21 @@
+[
+  {
+    "name": "Environment: backend not running",
+    "matchedStatuses": ["broken", "failed"],
+    "messageRegex": "(?s).*(Connection refused|ConnectException|ERR_CONNECTION_REFUSED).*"
+  },
+  {
+    "name": "Product defect: wrong HTTP status",
+    "matchedStatuses": ["failed"],
+    "messageRegex": "(?s).*Expected status code.*"
+  },
+  {
+    "name": "Product defect: wrong response data",
+    "matchedStatuses": ["failed"],
+    "messageRegex": "(?s).*(JSON path|Expected:|expected:).*"
+  },
+  {
+    "name": "Test defect: broken test code",
+    "matchedStatuses": ["broken"]
+  }
+]

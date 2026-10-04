@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.api;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.AdminClient;
 import com.rbctcsworld.ecommerce.qa.api.CartClient;
 import com.rbctcsworld.ecommerce.qa.api.OrderClient;
@@ -20,6 +22,8 @@ import static org.hamcrest.Matchers.notNullValue;
 /** Module 2 - orders + inventory, verified through the API only (see OrderDatabaseTest for DB checks). */
 @Tag("api")
 @Tag("order")
+@Epic("Orders")
+@Feature("Order placement")
 class OrderApiTest {
 
     private final CartClient cart = new CartClient();

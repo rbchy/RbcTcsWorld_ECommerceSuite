@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.db;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.CartClient;
 import com.rbctcsworld.ecommerce.qa.api.OrderClient;
 import com.rbctcsworld.ecommerce.qa.database.DatabaseUtils;
@@ -23,6 +25,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 /** Module 3 database checks, including card-data security (PCI-DSS principle: never store the full PAN or CVV). */
 @Tag("db")
 @Tag("security")
+@Epic("Data integrity")
+@Feature("Payments and card-data security")
 class PaymentDatabaseTest {
 
     private final CartClient cart = new CartClient();

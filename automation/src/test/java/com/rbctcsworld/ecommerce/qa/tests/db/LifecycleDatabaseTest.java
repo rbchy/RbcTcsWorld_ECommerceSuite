@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.db;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.AdminClient;
 import com.rbctcsworld.ecommerce.qa.api.OrderClient;
 import com.rbctcsworld.ecommerce.qa.database.DatabaseUtils;
@@ -21,6 +23,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /** Module 4 - after a full lifecycle, every table tells the same consistent story. */
 @Tag("db")
+@Epic("Data integrity")
+@Feature("Order lifecycle tables")
 class LifecycleDatabaseTest {
 
     @BeforeAll

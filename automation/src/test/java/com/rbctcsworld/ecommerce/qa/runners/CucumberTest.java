@@ -11,12 +11,12 @@ import static io.cucumber.junit.platform.engine.Constants.PLUGIN_PROPERTY_NAME;
 /**
  * Runs every .feature under src/test/resources/features.
  * Filter by tag: mvn test -Dcucumber.filter.tags="@cart and not @wip"
- * HTML report: target/cucumber-report.html
+ * Reports: target/cucumber-report.html and Allure (target/allure-results -> mvn allure:serve)
  */
 @Suite
 @IncludeEngines("cucumber")
 @SelectClasspathResource("features")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.rbctcsworld.ecommerce.qa.stepdefinitions")
-@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty, html:target/cucumber-report.html, json:target/cucumber-report.json")
+@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty, html:target/cucumber-report.html, json:target/cucumber-report.json, io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm")
 public class CucumberTest {
 }

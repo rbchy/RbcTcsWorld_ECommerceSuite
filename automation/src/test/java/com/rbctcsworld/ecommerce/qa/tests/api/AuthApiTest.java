@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.api;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.AuthClient;
 import com.rbctcsworld.ecommerce.qa.testdata.TestData;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +15,8 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @Tag("api")
 @Tag("smoke")
+@Epic("Identity & Access")
+@Feature("Authentication")
 class AuthApiTest {
 
     private final AuthClient auth = new AuthClient();

@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.api;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.AdminClient;
 import com.rbctcsworld.ecommerce.qa.api.OrderClient;
 import com.rbctcsworld.ecommerce.qa.testdata.Fixtures;
@@ -22,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 /** Module 4 - shipping, delivery, tracking timeline and public tracking. */
 @Tag("api")
 @Tag("fulfillment")
+@Epic("Fulfillment")
+@Feature("Shipping and tracking")
 class FulfillmentApiTest {
 
     private final OrderClient orders = new OrderClient();

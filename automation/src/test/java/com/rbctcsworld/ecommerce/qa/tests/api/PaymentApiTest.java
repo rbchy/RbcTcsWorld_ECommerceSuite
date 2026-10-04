@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.api;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.CartClient;
 import com.rbctcsworld.ecommerce.qa.api.OrderClient;
 import com.rbctcsworld.ecommerce.qa.api.ProductClient;
@@ -21,6 +23,8 @@ import static org.hamcrest.Matchers.notNullValue;
 /** Module 3 - mock payment gateway: approve, decline, validation, refunds, IDOR. */
 @Tag("api")
 @Tag("payment")
+@Epic("Checkout")
+@Feature("Payments")
 class PaymentApiTest {
 
     private final CartClient cart = new CartClient();

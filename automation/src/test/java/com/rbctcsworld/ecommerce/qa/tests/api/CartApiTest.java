@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.api;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.AuthClient;
 import com.rbctcsworld.ecommerce.qa.api.CartClient;
 import com.rbctcsworld.ecommerce.qa.api.ProductClient;
@@ -21,6 +23,8 @@ import static org.hamcrest.Matchers.hasSize;
 /** Module 1 - shopping cart. Each test uses a brand-new customer, so tests are independent. */
 @Tag("api")
 @Tag("cart")
+@Epic("Shopping")
+@Feature("Cart")
 class CartApiTest {
 
     private static final AuthClient auth = new AuthClient();

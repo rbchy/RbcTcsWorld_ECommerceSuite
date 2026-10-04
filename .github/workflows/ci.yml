@@ -1,6 +1,12 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   backend-tests:
@@ -36,8 +42,31 @@ jobs:
           nohup java -jar backend/target/ecommerce-backend-1.0.0.jar > backend.log 2>&1 &
           for i in $(seq 1 60); do curl -sf http://localhost:8081/actuator/health && break; sleep 2; done
           curl -sf http://localhost:8081/actuator/health
-      - name: Run API + BDD tests (UI excluded - no browser/frontend in CI yet)
+      - name: Run API + DB + BDD tests (UI excluded - no browser/frontend in CI yet)
         run: mvn -B -f automation/pom.xml test -DexcludedGroups=ui -DbaseUrl=http://localhost:8081
+
+      # ---------- Allure report ----------
+      - name: Restore Allure history from the published report (trend graphs)
+        if: always()
+        run: |
+          H=automation/target/allure-results/history
+          mkdir -p $H
+          BASE=https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/history
+          for f in history.json history-trend.json duration-trend.json retry-trend.json categories-trend.json; do
+            curl -sf "$BASE/$f" -o "$H/$f" || true
+          done
+      - name: Generate Allure report
+        if: always()
+        run: mvn -B -f automation/pom.xml allure:report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-report
+          path: automation/target/allure-report
+      - name: Package report for GitHub Pages
+        if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with: { path: automation/target/allure-report }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -46,3 +75,21 @@ jobs:
             automation/target/surefire-reports
             automation/target/cucumber-report.html
             backend.log
+
+  publish-report:
+    name: Publish Allure report to GitHub Pages
+    needs: api-automation
+    if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    # Pages must be enabled once (Settings > Pages > Source: GitHub Actions); until then this job
+    # fails without turning the whole CI run red.
+    continue-on-error: true
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

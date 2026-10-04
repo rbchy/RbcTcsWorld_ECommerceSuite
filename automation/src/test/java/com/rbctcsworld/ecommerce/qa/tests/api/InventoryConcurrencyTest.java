@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.api;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.CartClient;
 import com.rbctcsworld.ecommerce.qa.api.OrderClient;
 import com.rbctcsworld.ecommerce.qa.api.ProductClient;
@@ -27,6 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @Tag("api")
 @Tag("concurrency")
+@Epic("Orders")
+@Feature("Inventory concurrency")
 class InventoryConcurrencyTest {
 
     private static final int BUYERS = 10;

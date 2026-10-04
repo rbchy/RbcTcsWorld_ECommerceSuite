@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml)
 ![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-green) ![Tests](https://img.shields.io/badge/tests-292-brightgreen)
+[![Allure Report](https://img.shields.io/badge/Allure-live%20report-orange)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/)
 
 **292 automated tests** (172 backend unit/integration + 120 API, database, concurrency and BDD) covering a full
 register-to-refund journey.
@@ -18,7 +19,8 @@ layered automation framework (unit, integration, API, BDD, UI, security).
 | 2 | Orders + inventory: atomic stock reservation, cancel, audit trail, admin API | Done | [docs/modules/MODULE_02_ORDERS_INVENTORY_BN.md](docs/modules/MODULE_02_ORDERS_INVENTORY_BN.md) |
 | 3 | Checkout: price breakdown (discount, shipping, 6% tax), coupons, mock payment gateway, refunds | Done | [docs/modules/MODULE_03_CHECKOUT_PAYMENT_BN.md](docs/modules/MODULE_03_CHECKOUT_PAYMENT_BN.md) |
 | 4 | Order state machine, shipping, tracking timeline (incl. public tracking), returns with refund/restock rules | Done | [docs/modules/MODULE_04_FULFILLMENT_RETURNS_BN.md](docs/modules/MODULE_04_FULFILLMENT_RETURNS_BN.md) |
-| 5 | Product reviews + ratings, wishlist | Next | |
+| - | Allure reporting: Epics/Features, HTTP attachments, failure categories, trend history, published on GitHub Pages | Done | [docs/modules/ALLURE_REPORT_BN.md](docs/modules/ALLURE_REPORT_BN.md) |
+| 5 | Product reviews + ratings, wishlist | Planned | |
 
 ## Ports and accounts (development)
 
@@ -57,7 +59,11 @@ mvn -f automation/pom.xml test -Dgroups=returns     # return decision table
 mvn -f automation/pom.xml test -Dcucumber.filter.tags="@flagship"   # full register-to-refund journey
 ```
 
-Reports: `automation/target/surefire-reports`, `automation/target/cucumber-report.html`.
+Reports:
+- **Allure** (graphs, Epics/Features, every HTTP request/response, Gherkin steps, screenshots on UI failure):
+  `mvn -f automation/pom.xml allure:serve` after a test run (use `mvn clean test` so old results do not mix in).
+  CI publishes it on every push to `main`: **https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/**
+- Cucumber HTML: `automation/target/cucumber-report.html`; raw JUnit XML: `automation/target/surefire-reports`.
 
 ## Eclipse
 

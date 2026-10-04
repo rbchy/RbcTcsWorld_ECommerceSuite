@@ -1,5 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.api;
 
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import com.rbctcsworld.ecommerce.qa.api.AdminClient;
 import com.rbctcsworld.ecommerce.qa.api.CartClient;
 import com.rbctcsworld.ecommerce.qa.api.CheckoutClient;
@@ -23,6 +25,8 @@ import static org.hamcrest.Matchers.nullValue;
 /** Module 3 - price breakdown and coupon rules, through /api/checkout/quote and /api/orders. */
 @Tag("api")
 @Tag("checkout")
+@Epic("Checkout")
+@Feature("Pricing and coupons")
 class CheckoutApiTest {
 
     private final CartClient cart = new CartClient();
