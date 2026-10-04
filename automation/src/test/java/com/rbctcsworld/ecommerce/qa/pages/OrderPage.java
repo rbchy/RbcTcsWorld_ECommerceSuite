@@ -59,14 +59,13 @@ public class OrderPage extends BasePage {
 
     /** Waits until the order shows the expected status (the page reloads the order after every action). */
     public OrderPage waitForStatus(String expected) {
-        wait.until(d -> expected.equals(status()));
+        wait.until(d -> expected.equals(textOrEmpty("order-status")));
         return this;
     }
 
     private String snapshot() {
-        return status() + "|" + all(testId("payment-row")).size() + "|"
-                + (isShown("order-notice") ? text("order-notice") : "") + "|"
-                + (isShown("order-error") ? text("order-error") : "");
+        return textOrEmpty("order-status") + "|" + all(testId("payment-row")).size() + "|"
+                + textOrEmpty("order-notice") + "|" + textOrEmpty("order-error");
     }
 
     public OrderPage requestReturn(String reason) {
@@ -85,11 +84,11 @@ public class OrderPage extends BasePage {
 
     public List<String> timeline() {
         visible("timeline-event");
-        return all(testId("timeline-event")).stream().map(e -> e.getDomAttribute("data-status")).toList();
+        return attributeOfAll("timeline-event", "data-status");
     }
 
     public List<String> paymentStatuses() {
-        return all(testId("payment-row")).stream().map(e -> e.getDomAttribute("data-status")).toList();
+        return attributeOfAll("payment-row", "data-status");
     }
 
     public List<WebElement> items() {

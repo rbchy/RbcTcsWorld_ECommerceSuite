@@ -4,6 +4,7 @@ import com.rbctcsworld.ecommerce.qa.config.TestConfig;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -24,6 +25,9 @@ public abstract class BasePage {
     protected BasePage(WebDriver driver) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        // React re-renders replace DOM nodes; a reference found a moment ago can become "stale".
+        // Every explicit wait simply looks the element up again instead of failing.
+        this.wait.ignoring(StaleElementReferenceException.class);
     }
 
     protected static By testId(String id) {
@@ -56,16 +60,45 @@ public abstract class BasePage {
         e.sendKeys(text);
         // guard: fail here with a clear message instead of later with a confusing one
         new WebDriverWait(driver, Duration.ofSeconds(3))
+                .ignoring(StaleElementReferenceException.class)
                 .withMessage("field '" + testId + "' should contain '" + text + "'")
-                .until(d -> text.equals(e.getDomProperty("value")));
+                .until(d -> text.equals(d.findElement(testId(testId)).getDomProperty("value")));
     }
 
+    /** Finds the element and reads its text in ONE retried step, so a re-render in between cannot break it. */
     protected String text(String testId) {
-        return visible(testId).getText().trim();
+        By by = testId(testId);
+        return wait.until(d -> {
+            WebElement e = d.findElement(by);
+            return e.isDisplayed() ? e.getText().trim() : null;
+        });
+    }
+
+    /** Text of the element, or "" when it is not on the page (never waits, never throws on a re-render). */
+    protected String textOrEmpty(String testId) {
+        for (int attempt = 0; attempt < 3; attempt++) {
+            try {
+                List<WebElement> found = all(testId(testId));
+                return found.isEmpty() || !found.get(0).isDisplayed() ? "" : found.get(0).getText().trim();
+            } catch (StaleElementReferenceException e) {
+                // element replaced between find and read - look again
+            }
+        }
+        return "";
     }
 
     protected boolean isShown(String testId) {
-        return !all(testId(testId)).isEmpty() && all(testId(testId)).get(0).isDisplayed();
+        try {
+            List<WebElement> found = all(testId(testId));
+            return !found.isEmpty() && found.get(0).isDisplayed();
+        } catch (StaleElementReferenceException e) {
+            return false;
+        }
+    }
+
+    /** Reads an attribute of every matching element; retried as a whole if the list re-renders meanwhile. */
+    protected List<String> attributeOfAll(String testId, String attribute) {
+        return wait.until(d -> d.findElements(testId(testId)).stream().map(e -> e.getDomAttribute(attribute)).toList());
     }
 
     /** Opens a client-side route such as "/cart" or "/orders/12". */

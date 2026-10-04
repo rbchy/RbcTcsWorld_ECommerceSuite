@@ -1,7 +1,7 @@
 # RbcTcsWorld E-Commerce QA Automation Platform
 
 [![CI](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml)
-![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-green) ![Tests](https://img.shields.io/badge/tests-292-brightgreen)
+![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-green) ![Tests](https://img.shields.io/badge/tests-300%2B-brightgreen)
 [![Allure Report](https://img.shields.io/badge/Allure-live%20report-orange)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/)
 
 **292 automated tests** (172 backend unit/integration + 120 API, database, concurrency and BDD) covering a full
@@ -21,7 +21,7 @@ layered automation framework (unit, integration, API, BDD, UI, security).
 | 4 | Order state machine, shipping, tracking timeline (incl. public tracking), returns with refund/restock rules | Done | [docs/modules/MODULE_04_FULFILLMENT_RETURNS_BN.md](docs/modules/MODULE_04_FULFILLMENT_RETURNS_BN.md) |
 | - | Allure reporting: Epics/Features, HTTP attachments, failure categories, trend history, published on GitHub Pages | Done | [docs/modules/ALLURE_REPORT_BN.md](docs/modules/ALLURE_REPORT_BN.md) |
 | - | Storefront pages (login, cart, checkout, orders, pay / cancel / return) + Selenium Page Objects and UI journey tests, run headless in CI | Done | [docs/modules/FRONTEND_UI_TESTS_BN.md](docs/modules/FRONTEND_UI_TESTS_BN.md) |
-| 5 | Product reviews + ratings, wishlist | Planned | |
+| 5 | Verified-purchase reviews, ratings (race-safe average), moderation, wishlist with price-drop and move-to-cart; product page + wishlist UI | Done | [docs/modules/MODULE_05_REVIEWS_WISHLIST_BN.md](docs/modules/MODULE_05_REVIEWS_WISHLIST_BN.md) |
 
 ## Ports and accounts (development)
 

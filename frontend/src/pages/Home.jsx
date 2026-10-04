@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api, { errorText, money } from '../api';
 import { getSession, go } from '../session';
+import Stars from './Stars';
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -26,6 +27,18 @@ export default function Home() {
     }
   };
 
+  const wish = async productId => {
+    if (!getSession()) { go('/login'); return; }
+    try {
+      const r = await api.post('/wishlist', { productId });
+      setFlash(r.status === 201 ? `Saved to wishlist (${r.data.count})` : 'Already on your wishlist');
+      setError('');
+    } catch (e) {
+      setFlash('');
+      setError(errorText(e));
+    }
+  };
+
   return (
     <>
       <header className="page-head">
@@ -35,19 +48,20 @@ export default function Home() {
       {error && <p data-testid="error-banner" className="error">{error}</p>}
       {flash && <p data-testid="flash" className="ok">{flash}</p>}
       <section className="grid" data-testid="product-grid">
-        {products.map(p => <ProductCard key={p.id} p={p} onAdd={add} />)}
+        {products.map(p => <ProductCard key={p.id} p={p} onAdd={add} onWish={wish} />)}
       </section>
     </>
   );
 }
 
-function ProductCard({ p, onAdd }) {
+function ProductCard({ p, onAdd, onWish }) {
   const [qty, setQty] = useState(1);
   return (
     <article data-testid="product-card" data-sku={p.sku}>
-      <h2 data-testid="product-name">{p.name}</h2>
+      <h2><a href={`#/products/${p.id}`} data-testid="product-name">{p.name}</a></h2>
       <p className="muted">{p.category}</p>
-      <strong data-testid="product-price">{money(p.price)}</strong>
+      <Stars average={p.ratingAverage} count={p.ratingCount} />
+      <p><strong data-testid="product-price">{money(p.price)}</strong></p>
       <p className="muted" data-testid="product-stock">Stock: {p.stock}</p>
       <div className="row">
         <input type="number" min="1" max="10" value={qty} data-testid="qty-input"
@@ -55,6 +69,7 @@ function ProductCard({ p, onAdd }) {
         <button data-testid="add-to-cart" disabled={p.stock < 1} onClick={() => onAdd(p.id, qty)}>
           {p.stock < 1 ? 'Out of stock' : 'Add to cart'}
         </button>
+        <button className="ghost" data-testid="add-to-wishlist" title="Save to wishlist" onClick={() => onWish(p.id)}>♡</button>
       </div>
     </article>
   );

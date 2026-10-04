@@ -36,3 +36,14 @@ th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
 @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } .topbar { flex-wrap: wrap; } }
 .timeline { padding-left: 18px; } .timeline li { margin-bottom: 8px; }
+/* Module 5: ratings, reviews, wishlist */
+.stars { color: #b7791f; font-size: 14px; } .stars .muted { color: var(--muted); }
+button.ghost { background: #fff; color: var(--accent); border: 1px solid var(--accent); padding: 8px 12px; }
+.row.between { justify-content: space-between; align-items: center; }
+.dist { width: 100%; max-width: 360px; } .dist td { border: 0; padding: 3px 6px; font-size: 13px; }
+.dist .bar { width: 70%; } .dist .bar span { display: block; height: 9px; background: #f0b429; border-radius: 4px; min-width: 2px; }
+.reviews { list-style: none; padding: 0; } .reviews li { border-bottom: 1px solid var(--line); padding: 12px 0; }
+.big-rating .stars { font-size: 18px; }
+textarea { padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; width: 100%; }
+td.actions { display: flex; gap: 12px; align-items: center; }
+article h2 a { color: var(--ink); text-decoration: none; } article h2 a:hover { text-decoration: underline; }

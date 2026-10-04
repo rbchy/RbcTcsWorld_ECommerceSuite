@@ -8,12 +8,14 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
+import ProductDetail from './pages/ProductDetail';
+import Wishlist from './pages/Wishlist';
 
 // data-testid attributes are the stable hooks used by Selenium (automation/.../pages/*.java).
 function App() {
   const route = useRoute();
   const session = useSession();
-  const needsLogin = ['/cart', '/checkout', '/orders'].some(p => route.startsWith(p));
+  const needsLogin = ['/cart', '/checkout', '/orders', '/wishlist'].some(p => route.startsWith(p));
 
   let page;
   if (needsLogin && !session) page = <Login redirect={route} />;
@@ -22,6 +24,8 @@ function App() {
   else if (route === '/checkout') page = <Checkout />;
   else if (route === '/orders') page = <Orders />;
   else if (route.startsWith('/orders/')) page = <OrderDetail id={route.split('/')[2]} />;
+  else if (route === '/wishlist') page = <Wishlist />;
+  else if (route.startsWith('/products/')) page = <ProductDetail id={route.split('/')[2]} />;
   else page = <Home />;
 
   return (
@@ -29,6 +33,7 @@ function App() {
       <nav className="topbar">
         <a href="#/" className="brand" data-testid="nav-home">RbcTcsWorld</a>
         <div className="links">
+          <a href="#/wishlist" data-testid="nav-wishlist">Wishlist</a>
           <a href="#/cart" data-testid="nav-cart">Cart</a>
           <a href="#/orders" data-testid="nav-orders">Orders</a>
           {session ? (

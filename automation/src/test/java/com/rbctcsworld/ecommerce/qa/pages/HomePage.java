@@ -40,7 +40,7 @@ public class HomePage extends BasePage {
     }
 
     public List<String> productNames() {
-        return all(PRODUCT_NAME).stream().map(WebElement::getText).toList();
+        return wait.until(d -> d.findElements(PRODUCT_NAME).stream().map(WebElement::getText).toList());
     }
 
     /** Sets the quantity on the card of the given SKU and clicks "Add to cart". */
@@ -52,6 +52,21 @@ public class HomePage extends BasePage {
         qty.sendKeys(String.valueOf(quantity));
         c.findElement(testId("add-to-cart")).click();
         return this;
+    }
+
+    /** Clicks the heart on the card of the given SKU and waits for the confirmation message. */
+    public HomePage addToWishlist(String sku) {
+        By card = By.cssSelector("[data-testid='product-card'][data-sku='" + sku + "']");
+        String before = textOrEmpty("flash") + "|" + textOrEmpty("error-banner");
+        visible(card).findElement(testId("add-to-wishlist")).click();
+        wait.until(d -> !(textOrEmpty("flash") + "|" + textOrEmpty("error-banner")).equals(before));
+        return this;
+    }
+
+    /** "4.5" or "0.0" from the card's rating element. */
+    public String ratingOf(String sku) {
+        By rating = By.cssSelector("[data-testid='product-card'][data-sku='" + sku + "'] [data-testid='product-rating']");
+        return wait.until(d -> d.findElement(rating).getDomAttribute("data-average"));
     }
 
     public String flash() {
