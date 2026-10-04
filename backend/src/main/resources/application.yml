@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: rbctcsworld-ecommerce
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ecommerce}
+    username: ${DB_USER:ecommerce}
+    password: ${DB_PASSWORD:ecommerce}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Flyway owns the schema; Hibernate only checks entities match it
+    open-in-view: false
+  flyway:
+    enabled: true
+
+# 8081 (not 8080) because Jenkins usually runs on 8080 on the same machine.
+# Automation, frontend proxy and README all use 8081.
+server:
+  port: ${SERVER_PORT:8081}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-this-development-secret-key-which-must-be-long-enough-123456789}
+    expiration-ms: 3600000
+  seed:
+    # DEV ONLY - override with environment variables in any shared environment
+    admin-email: ${ADMIN_EMAIL:admin@rbctcsworld.com}
+    admin-password: ${ADMIN_PASSWORD:Admin@12345}
+  pricing:
+    tax-rate: 0.06                    # 6% sales tax on merchandise (not on shipping)
+    free-shipping-threshold: 50.00    # merchandise total after discount
+    shipping-fee: 5.99
+  returns:
+    window-days: 30                   # a return may be requested up to 30 days after delivery

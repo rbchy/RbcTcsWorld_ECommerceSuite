@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.rbctcsworld</groupId>
+  <artifactId>rbctcsworld-ecommerce-qa</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+
+  <!--
+    Default build (mvn test / Eclipse "Run As > Maven test" on this root project):
+      backend only - unit + integration tests on H2, needs nothing else running.
+
+    The automation suite is black-box: it calls a RUNNING backend (8081) and, for UI tests, the frontend (5173).
+    It is therefore NOT part of the default build. Run it explicitly once the backend is up:
+      mvn -f automation/pom.xml test -DexcludedGroups=ui
+    or include it in the root build with the e2e profile:
+      mvn test -Pe2e
+  -->
+  <modules>
+    <module>backend</module>
+  </modules>
+
+  <profiles>
+    <profile>
+      <id>e2e</id>
+      <modules>
+        <module>automation</module>
+      </modules>
+    </profile>
+  </profiles>
+</project>

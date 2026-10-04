@@ -1,0 +1,2 @@
+body{font-family:Arial;margin:0;background:#f5f6f8;color:#202124}main{max-width:1100px;margin:auto;padding:30px}header{display:flex;gap:20px;align-items:center;justify-content:space-between}input{padding:12px;width:320px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:30px}article{background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px #ddd}
+.error{background:#fdecea;color:#8a1c1c;padding:12px 16px;border-radius:8px;margin-top:20px}

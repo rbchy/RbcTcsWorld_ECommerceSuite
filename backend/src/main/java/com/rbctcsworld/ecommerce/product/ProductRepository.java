@@ -1,0 +1,35 @@
+package com.rbctcsworld.ecommerce.product;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    List<Product> findByActiveTrueOrderByIdAsc();
+
+    List<Product> findByNameContainingIgnoreCaseAndActiveTrueOrderByIdAsc(String name);
+
+    Optional<Product> findByIdAndActiveTrue(Long id);
+
+    Optional<Product> findBySku(String sku);
+
+    boolean existsBySku(String sku);
+
+    /** Atomic "check and decrement". Returns 1 if stock was reserved, 0 if not enough stock / inactive. */
+    @Modifying(flushAutomatically = true)
+    @Query("update Product p set p.stock = p.stock - :qty where p.id = :id and p.active = true and p.stock >= :qty")
+    int decrementStock(@Param("id") Long id, @Param("qty") int qty);
+
+    @Modifying(flushAutomatically = true)
+    @Query("update Product p set p.stock = p.stock + :qty where p.id = :id")
+    int incrementStock(@Param("id") Long id, @Param("qty") int qty);
+
+    /** Reads stock straight from the database (not from a possibly stale entity in memory). */
+    @Query("select p.stock from Product p where p.id = :id")
+    int currentStock(@Param("id") Long id);
+}
