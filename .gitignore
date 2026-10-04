@@ -13,3 +13,5 @@ dist/
 *.zip
 .claude-m2-tmp/
 *.docx
+# generated reports saved in the project root (e.g. exported Cucumber HTML report)
+/*.pdf
