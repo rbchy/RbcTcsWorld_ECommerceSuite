@@ -1,6 +1,8 @@
 package com.rbctcsworld.ecommerce.product;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -32,4 +34,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     /** Reads stock straight from the database (not from a possibly stale entity in memory). */
     @Query("select p.stock from Product p where p.id = :id")
     int currentStock(@Param("id") Long id);
+
+    /** SELECT ... FOR UPDATE: serialises rating recalculation for one product (see ReviewService). */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Product p where p.id = :id")
+    Optional<Product> lockById(@Param("id") Long id);
 }

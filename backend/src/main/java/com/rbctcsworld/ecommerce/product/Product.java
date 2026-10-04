@@ -35,6 +35,13 @@ public class Product {
     @Column(nullable = false)
     private boolean active = true;
 
+    /** Average of PUBLISHED reviews, one decimal (0.0 when none). Maintained by ReviewService. */
+    @Column(name = "rating_average", nullable = false, precision = 2, scale = 1)
+    private BigDecimal ratingAverage = BigDecimal.ZERO.setScale(1);
+
+    @Column(name = "rating_count", nullable = false)
+    private int ratingCount;
+
     protected Product() {
     }
 
@@ -62,7 +69,14 @@ public class Product {
     public BigDecimal getPrice() { return price; }
     public int getStock() { return stock; }
     public boolean isActive() { return active; }
+    public BigDecimal getRatingAverage() { return ratingAverage; }
+    public int getRatingCount() { return ratingCount; }
 
     public void setActive(boolean active) { this.active = active; }
     public void setStock(int stock) { this.stock = stock; }
+
+    public void applyRating(BigDecimal average, int count) {
+        this.ratingAverage = average;
+        this.ratingCount = count;
+    }
 }
