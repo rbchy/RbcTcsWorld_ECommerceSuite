@@ -20,6 +20,7 @@ layered automation framework (unit, integration, API, BDD, UI, security).
 | 3 | Checkout: price breakdown (discount, shipping, 6% tax), coupons, mock payment gateway, refunds | Done | [docs/modules/MODULE_03_CHECKOUT_PAYMENT_BN.md](docs/modules/MODULE_03_CHECKOUT_PAYMENT_BN.md) |
 | 4 | Order state machine, shipping, tracking timeline (incl. public tracking), returns with refund/restock rules | Done | [docs/modules/MODULE_04_FULFILLMENT_RETURNS_BN.md](docs/modules/MODULE_04_FULFILLMENT_RETURNS_BN.md) |
 | - | Allure reporting: Epics/Features, HTTP attachments, failure categories, trend history, published on GitHub Pages | Done | [docs/modules/ALLURE_REPORT_BN.md](docs/modules/ALLURE_REPORT_BN.md) |
+| - | Storefront pages (login, cart, checkout, orders, pay / cancel / return) + Selenium Page Objects and UI journey tests, run headless in CI | Done | [docs/modules/FRONTEND_UI_TESTS_BN.md](docs/modules/FRONTEND_UI_TESTS_BN.md) |
 | 5 | Product reviews + ratings, wishlist | Planned | |
 
 ## Ports and accounts (development)

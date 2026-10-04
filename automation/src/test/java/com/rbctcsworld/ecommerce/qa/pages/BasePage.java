@@ -46,11 +46,18 @@ public abstract class BasePage {
         wait.until(ExpectedConditions.elementToBeClickable(testId(testId))).click();
     }
 
+    /** Cmd on macOS, Ctrl elsewhere. Sending both breaks Linux: Chrome types Meta+A as a literal "a". */
+    private static final Keys SELECT_ALL_MODIFIER =
+            System.getProperty("os.name", "").toLowerCase().contains("mac") ? Keys.COMMAND : Keys.CONTROL;
+
     protected void type(String testId, String text) {
         WebElement e = visible(testId);
-        e.sendKeys(Keys.chord(Keys.CONTROL, "a"), Keys.chord(Keys.COMMAND, "a"));   // select all on Linux/Windows and macOS
-        e.sendKeys(Keys.DELETE);
+        e.sendKeys(Keys.chord(SELECT_ALL_MODIFIER, "a"), Keys.DELETE);
         e.sendKeys(text);
+        // guard: fail here with a clear message instead of later with a confusing one
+        new WebDriverWait(driver, Duration.ofSeconds(3))
+                .withMessage("field '" + testId + "' should contain '" + text + "'")
+                .until(d -> text.equals(e.getDomProperty("value")));
     }
 
     protected String text(String testId) {
