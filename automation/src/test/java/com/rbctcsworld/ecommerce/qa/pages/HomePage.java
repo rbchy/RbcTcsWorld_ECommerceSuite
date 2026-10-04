@@ -7,19 +7,20 @@ import org.openqa.selenium.WebElement;
 
 import java.util.List;
 
-/** Customer storefront home page (frontend/src/main.jsx). Locators use data-testid attributes. */
+/** Storefront home page (frontend/src/pages/Home.jsx). */
 public class HomePage extends BasePage {
 
-    private static final By SEARCH = By.cssSelector("[data-testid='search-input']");
-    private static final By PRODUCT_CARD = By.cssSelector("[data-testid='product-card']");
-    private static final By PRODUCT_NAME = By.cssSelector("[data-testid='product-name']");
+    private static final By SEARCH = testId("search-input");
+    private static final By PRODUCT_CARD = testId("product-card");
+    private static final By PRODUCT_NAME = testId("product-name");
 
     public HomePage(WebDriver driver) {
         super(driver);
     }
 
     public HomePage open() {
-        driver.get(TestConfig.uiUrl());
+        driver.get(TestConfig.uiUrl() + "/#/");
+        driver.navigate().refresh();   // re-read localStorage session after a token login
         visible(SEARCH);
         return this;
     }
@@ -40,5 +41,33 @@ public class HomePage extends BasePage {
 
     public List<String> productNames() {
         return all(PRODUCT_NAME).stream().map(WebElement::getText).toList();
+    }
+
+    /** Sets the quantity on the card of the given SKU and clicks "Add to cart". */
+    public HomePage addToCart(String sku, int quantity) {
+        By card = By.cssSelector("[data-testid='product-card'][data-sku='" + sku + "']");
+        WebElement c = visible(card);
+        WebElement qty = c.findElement(testId("qty-input"));
+        qty.clear();
+        qty.sendKeys(String.valueOf(quantity));
+        c.findElement(testId("add-to-cart")).click();
+        return this;
+    }
+
+    public String flash() {
+        return text("flash");
+    }
+
+    public String error() {
+        return text("error-banner");
+    }
+
+    public CartPage goToCart() {
+        click("nav-cart");
+        return new CartPage(driver).waitLoaded();
+    }
+
+    public boolean isLoggedInAs(String email) {
+        return isShown("nav-user") && text("nav-user").equals(email);
     }
 }

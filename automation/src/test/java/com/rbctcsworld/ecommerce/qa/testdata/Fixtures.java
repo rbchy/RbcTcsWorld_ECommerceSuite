@@ -44,6 +44,22 @@ public final class Fixtures {
         return id;
     }
 
+    public record Product(long id, String sku, String name) {
+    }
+
+    /**
+     * Like {@link #product} but the name contains the unique SKU, so a UI test can search for exactly
+     * this product in the storefront grid.
+     */
+    public static Product namedProduct(String price, int stock) {
+        String sku = TestData.uniqueSku();
+        String name = "UI Item " + sku;
+        int id = PRODUCTS.create(adminToken(),
+                        ProductClient.body(name, sku, "qa", new BigDecimal(price), stock))
+                .then().statusCode(201).extract().path("id");
+        return new Product(id, sku, name);
+    }
+
     /** Customer orders {@code qty} of the product and pays with the approved test card. Returns the order id. */
     public static long paidOrder(Customer c, long productId, int qty) {
         CART.add(c.token(), productId, qty).then().statusCode(201);
