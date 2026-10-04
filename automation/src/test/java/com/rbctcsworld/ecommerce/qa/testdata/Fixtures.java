@@ -68,6 +68,27 @@ public final class Fixtures {
         return id;
     }
 
+    /** Customer places an order for the product but does not pay. Returns the order id. */
+    public static long placedOrder(Customer c, long productId, int qty) {
+        CART.add(c.token(), productId, qty).then().statusCode(201);
+        int id = ORDERS.place(c.token()).then().statusCode(201).extract().path("id");
+        return id;
+    }
+
+    /** paidOrder + warehouse ships (UPS). */
+    public static long shippedOrder(Customer c, long productId, int qty) {
+        long id = paidOrder(c, productId, qty);
+        ADMIN.ship(adminToken(), id, "UPS").then().statusCode(200);
+        return id;
+    }
+
+    /** A new customer who has received (DELIVERED) one unit of the product - the only kind allowed to review it. */
+    public static Customer verifiedBuyer(long productId) {
+        Customer c = newCustomer();
+        deliveredOrder(c, productId, 1);
+        return c;
+    }
+
     /** paidOrder + warehouse ships (UPS) and marks delivered. */
     public static long deliveredOrder(Customer c, long productId, int qty) {
         long id = paidOrder(c, productId, qty);
