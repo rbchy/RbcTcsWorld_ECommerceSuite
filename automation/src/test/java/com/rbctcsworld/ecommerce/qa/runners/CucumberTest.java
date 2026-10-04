@@ -12,8 +12,11 @@ import static io.cucumber.junit.platform.engine.Constants.PLUGIN_PROPERTY_NAME;
  * Runs every .feature under src/test/resources/features.
  * Filter by tag: mvn test -Dcucumber.filter.tags="@cart and not @wip"
  * Reports: target/cucumber-report.html and Allure (target/allure-results -> mvn allure:serve)
+ *
+ * failIfNoTests = false: with a tag filter that matches no scenario (e.g. -Dgroups=ui runs only
+ * Selenium tests, and no feature is tagged @ui) the suite is simply empty instead of failing the build.
  */
-@Suite
+@Suite(failIfNoTests = false)
 @IncludeEngines("cucumber")
 @SelectClasspathResource("features")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.rbctcsworld.ecommerce.qa.stepdefinitions")
