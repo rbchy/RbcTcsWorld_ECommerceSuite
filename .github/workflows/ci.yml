@@ -20,6 +20,9 @@ jobs:
         run: |
           set -o pipefail
           mvn -B -f backend/pom.xml verify 2>&1 | tee build.log
+      - name: Test totals
+        if: always()
+        run: .github/scripts/test-totals.sh backend backend/target/surefire-reports
       - name: Show failed tests and build errors as annotations
         if: failure()
         run: |
@@ -82,6 +85,9 @@ jobs:
           name: k6-reports
           path: performance/reports/
 
+      - name: Test totals
+        if: always()
+        run: .github/scripts/test-totals.sh automation automation/target/surefire-reports
       - name: Show failed tests as annotations
         if: failure()
         run: .github/scripts/annotate-failures.sh automation/target/surefire-reports
