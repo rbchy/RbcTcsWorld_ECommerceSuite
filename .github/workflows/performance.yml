@@ -46,6 +46,10 @@ jobs:
         run: |
           # shellcheck disable=SC2086
           k6 run $ARGS "performance/tests/${TEST}.js"
+      - name: k6 key numbers as an annotation
+        if: always()
+        env: { TEST: '${{ inputs.test }}' }
+        run: performance/summary-notice.sh "$TEST"
       - name: Database after the test (row counts, stock never negative)
         if: always()
         env: { PGPASSWORD: ecommerce }
