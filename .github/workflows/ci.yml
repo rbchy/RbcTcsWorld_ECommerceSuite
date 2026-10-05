@@ -114,13 +114,12 @@ jobs:
             frontend.log
 
   security-scan:
-    name: Security scan (OWASP ZAP API scan + Trivy dependencies)
+    name: Security scan (OWASP ZAP API scan + OSV dependency scan)
     needs: backend-tests
     runs-on: ubuntu-latest
     timeout-minutes: 40
     permissions:
       contents: read
-      security-events: write     # upload Trivy results to the repository's Security tab
     services:
       postgres:
         image: postgres:16
@@ -134,15 +133,20 @@ jobs:
         with: { distribution: temurin, java-version: '21', cache: maven }
 
       # ---------- dependencies with known vulnerabilities (SCA) ----------
-      - name: Trivy - all findings to the Security tab
-        uses: aquasecurity/trivy-action@0.28.0
-        with: { scan-type: fs, scanners: vuln, format: sarif, output: trivy.sarif, severity: 'CRITICAL,HIGH,MEDIUM' }
-      - uses: github/codeql-action/upload-sarif@v3
+      # OSV-Scanner (Google) checks pom.xml and package-lock.json against the OSV vulnerability database.
+      # Third-party action pinned to a full commit SHA (v2.3.0): a moved tag cannot change what runs here.
+      - name: OSV-Scanner - known vulnerabilities in dependencies
+        uses: google/osv-scanner-action/osv-scanner-action@b77c075a1235514558f0eb88dbd31e22c45e0cd2
+        continue-on-error: true      # report-only: findings are listed as annotations + artifact below
+        with:
+          scan-args: |-
+            --format=json
+            --output=osv-results.json
+            --recursive
+            ./
+      - name: Dependency findings as annotations
         if: always()
-        with: { sarif_file: trivy.sarif, category: trivy }
-      - name: Trivy - fail on CRITICAL vulnerabilities that have a fix
-        uses: aquasecurity/trivy-action@0.28.0
-        with: { scan-type: fs, scanners: vuln, format: table, severity: CRITICAL, ignore-unfixed: true, exit-code: '1' }
+        run: security/osv-summary.sh osv-results.json
 
       # ---------- running application (DAST) ----------
       - name: Build and start backend
@@ -176,6 +180,7 @@ jobs:
           path: |
             security/zap/zap-report.html
             security/zap/zap-report.json
+            osv-results.json
             backend.log
 
   publish-report:
