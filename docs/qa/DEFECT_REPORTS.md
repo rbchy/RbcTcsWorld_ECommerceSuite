@@ -200,9 +200,18 @@ Storefront: "Showing 20 of N products" and a **Load more** button.
 | Latency p95 (CI) | 6.1 ms | 7.2-7.5 ms |
 
 Latency on CI did not change measurably: with only 234 products the JSON is small either way, and
-the paginated query adds a `COUNT(*)` for the total. The win is that size and latency **no longer
-grow with the catalog**; on the larger local database the endpoint was the slowest read (p95 22 ms).
-Reported honestly: the fix bounds the cost, it did not make a small catalog faster.
+the paginated query adds a `COUNT(*)` for the total. On the **larger local database** the latency gain
+is clear - same machine, same k6 `load.js` (40 browsing + 10 buying users, 8 minutes), before and after:
+
+| `GET /api/products` (MacBook) | Before (00:38 UTC) | After (02:57 UTC) | Change |
+|---|---|---|---|
+| p95 | 22 ms | 9.0 ms | **-59 %** |
+| average | 16 ms | 6.3 ms | -61 % |
+| max | 95 ms | 22 ms | -77 % |
+| Rank among reads | slowest | in line with the other reads (7-9 ms) | |
+
+Whole run: overall p95 20 -> 16 ms, p99 25 -> 20 ms, purchase journey p95 81 -> 73 ms, 0 % errors in both runs.
+Conclusion: on a small catalog the fix bounds the cost; on a large one it also makes the page faster.
 
 **Regression tests:** `CatalogPaginationTest` (bounded default page, all pages exactly once, Link header,
 boundaries, sorting, size < 10 KB), `ProductServiceTest#invalidPageSizeOrSortIs400`,

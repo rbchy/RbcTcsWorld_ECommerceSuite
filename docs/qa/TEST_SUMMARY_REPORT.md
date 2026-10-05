@@ -11,7 +11,8 @@
 
 **GO for release 1.0.** All exit criteria are met, every requirement is covered, and no defect is open.
 The last open defect, [DEF-007](DEFECT_REPORTS.md#def-007) (catalog without pagination), was fixed test-first
-before sign-off: response size -91 %, constant regardless of catalog size.
+before sign-off: response size -91 %, constant regardless of catalog size, and on the large local
+catalog the endpoint p95 dropped from 22 ms to 9 ms (-59 %).
 
 ## 2. Exit criteria
 
@@ -46,6 +47,7 @@ database and security tests. Figures come from the CI "Test totals" annotations 
 | Flash sale | MacBook | 100 buyers, 20 units | 20 created, 80 rejected, stock 0; order p95 112 ms | all pass |
 | Smoke + flash sale | CI, every push | 2 users; 60 buyers / 15 units | 0 % failed, checks 100 % | all pass |
 | Catalog (DEF-007) | CI, every push | 10 visitors, 20 s | response 32,927 -> 2,998 bytes p95 (234 -> 20 products) | all pass |
+| Load after DEF-007 fix | MacBook (Docker) | 40 + 10 users, 8 min | 18,645 requests, 0 % failed, p95 16 ms; `GET /api/products` p95 22 -> 9 ms (-59 %) | all pass |
 
 Observation: order latency grows with the number of simultaneous buyers of the **same** product
 (112 ms -> 279 ms from 100 to 300 buyers) because the row update is serialised. This is the expected
