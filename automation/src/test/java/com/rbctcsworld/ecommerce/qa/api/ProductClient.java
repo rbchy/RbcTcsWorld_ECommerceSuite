@@ -17,6 +17,16 @@ public class ProductClient extends ApiClient {
         return anonymous().queryParam("q", q).get("/api/products");
     }
 
+    /** One catalog page. Any argument may be null (= not sent), so defaults and bad values can be tested. */
+    public Response page(String q, Object page, Object size, String sort) {
+        var spec = anonymous();
+        if (q != null) spec = spec.queryParam("q", q);
+        if (page != null) spec = spec.queryParam("page", page);
+        if (size != null) spec = spec.queryParam("size", size);
+        if (sort != null) spec = spec.queryParam("sort", sort);
+        return spec.get("/api/products");
+    }
+
     /** Raw GET for negative tests with malformed paths. */
     public Response anonymousGet(String path) {
         return anonymous().get(path);
@@ -39,13 +49,17 @@ public class ProductClient extends ApiClient {
     }
 
     /** Finds the id of an active product by SKU (seed data has fixed SKUs). */
+    /** Walks the catalog page by page (the list is paginated since DEF-007). */
     public long idBySku(String sku) {
-        List<Map<String, Object>> products = list().then().statusCode(200).extract().jsonPath().getList("$");
-        return products.stream()
-                .filter(p -> sku.equals(p.get("sku")))
-                .map(p -> ((Number) p.get("id")).longValue())
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No active product with SKU " + sku));
+        for (int page = 0; page < 1000; page++) {
+            List<Map<String, Object>> products = page(null, page, 100, null).then().statusCode(200)
+                    .extract().jsonPath().getList("$");
+            if (products.isEmpty()) break;
+            for (Map<String, Object> p : products) {
+                if (sku.equals(p.get("sku"))) return ((Number) p.get("id")).longValue();
+            }
+        }
+        throw new IllegalStateException("No active product with SKU " + sku);
     }
 
     public static Map<String, Object> body(String name, String sku, String category, BigDecimal price, int stock) {
