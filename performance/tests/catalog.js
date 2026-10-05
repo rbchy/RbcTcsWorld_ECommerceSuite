@@ -26,7 +26,10 @@ export const options = {
 
 export function setup() {
   const r = http.get(`${BASE_URL}/api/products?size=1`);
-  console.log(`catalog total (X-Total-Count): ${r.headers['X-Total-Count'] || 'header missing - unpaginated endpoint'}`);
+  // Fail fast with a clear message instead of 30 s of "connection refused" and misleading numbers
+  if (r.status === 0) throw new Error(`Backend not reachable on ${BASE_URL} - start it first: mvn -f backend/pom.xml spring-boot:run`);
+  if (r.status !== 200) throw new Error(`GET /api/products answered ${r.status}`);
+  console.log(`catalog total (X-Total-Count): ${r.headers['X-Total-Count'] || 'header missing - unpaginated endpoint (DEF-007 not fixed)'}`);
 }
 
 export default function () {
