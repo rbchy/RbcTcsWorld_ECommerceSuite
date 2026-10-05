@@ -120,6 +120,71 @@ jobs:
             backend.log
             frontend.log
 
+  security-scan:
+    name: Security scan (OWASP ZAP API scan + Trivy dependencies)
+    needs: backend-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      security-events: write     # upload Trivy results to the repository's Security tab
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_DB: ecommerce, POSTGRES_USER: ecommerce, POSTGRES_PASSWORD: ecommerce }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ecommerce" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21', cache: maven }
+
+      # ---------- dependencies with known vulnerabilities (SCA) ----------
+      - name: Trivy - all findings to the Security tab
+        uses: aquasecurity/trivy-action@0.28.0
+        with: { scan-type: fs, scanners: vuln, format: sarif, output: trivy.sarif, severity: 'CRITICAL,HIGH,MEDIUM' }
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with: { sarif_file: trivy.sarif, category: trivy }
+      - name: Trivy - fail on CRITICAL vulnerabilities that have a fix
+        uses: aquasecurity/trivy-action@0.28.0
+        with: { scan-type: fs, scanners: vuln, format: table, severity: CRITICAL, ignore-unfixed: true, exit-code: '1' }
+
+      # ---------- running application (DAST) ----------
+      - name: Build and start backend
+        run: |
+          mvn -B -f backend/pom.xml -DskipTests package
+          nohup java -jar backend/target/ecommerce-backend-1.0.0.jar > backend.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:8081/actuator/health && break; sleep 2; done
+          curl -sf http://localhost:8081/v3/api-docs -o security/zap/openapi.json
+          jq '.paths | keys | length' security/zap/openapi.json
+      - name: OWASP ZAP API scan (logged in as a customer)
+        run: |
+          TOKEN=$(curl -sf -X POST http://localhost:8081/api/auth/register -H 'Content-Type: application/json' \
+            -d '{"email":"zap-scanner@security.test","password":"Password1!"}' | jq -r .token)
+          chmod -R 777 security/zap
+          set +e
+          # ZAP adds this header to every request it sends (built-in env variables of the packaged scans)
+          docker run --rm --network host -v "$PWD/security/zap:/zap/wrk:rw" \
+            -e ZAP_AUTH_HEADER=Authorization -e ZAP_AUTH_HEADER_VALUE="Bearer $TOKEN" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-api-scan.py -t http://localhost:8081/v3/api-docs -f openapi -c zap-rules.tsv -I \
+              -r zap-report.html -J zap-report.json
+          code=$?
+          set -e
+          security/zap/summary.sh security/zap/zap-report.json
+          # 0 = clean, 2 = warnings only (allowed by -I); 1 = a FAIL rule was hit; 3 = ZAP error
+          if [ "$code" -eq 1 ] || [ "$code" -eq 3 ]; then echo "::error title=OWASP ZAP::exit code $code"; exit 1; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: |
+            security/zap/zap-report.html
+            security/zap/zap-report.json
+            backend.log
+
   publish-report:
     name: Publish Allure report to GitHub Pages
     needs: api-automation

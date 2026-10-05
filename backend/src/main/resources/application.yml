@@ -37,3 +37,13 @@ app:
     shipping-fee: 5.99
   returns:
     window-days: 30                   # a return may be requested up to 30 days after delivery
+  security:
+    login:
+      max-failures: 5        # failed logins per e-mail ...
+      window-minutes: 15     # ... within this time ...
+      lock-minutes: 15       # ... lock that e-mail for this long (HTTP 429 + Retry-After)
+
+# OpenAPI JSON for tools (OWASP ZAP). Switch off in production with API_DOCS_ENABLED=false.
+springdoc:
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:true}

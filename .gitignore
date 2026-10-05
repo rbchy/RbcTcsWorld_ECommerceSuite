@@ -18,3 +18,6 @@ dist/
 # k6 output (generated on every run)
 performance/reports/*
 !performance/reports/.gitkeep
+# OWASP ZAP output (generated in CI)
+security/zap/zap-report.*
+security/zap/openapi.json

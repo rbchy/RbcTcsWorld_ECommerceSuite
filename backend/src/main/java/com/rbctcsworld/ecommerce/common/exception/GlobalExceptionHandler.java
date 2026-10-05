@@ -35,6 +35,14 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, ex.getMessage(), req);
     }
 
+    @ExceptionHandler(TooManyRequestsException.class)
+    ResponseEntity<ApiError> tooMany(TooManyRequestsException ex, HttpServletRequest req) {
+        ResponseEntity<ApiError> r = build(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), req);
+        return ResponseEntity.status(r.getStatusCode())
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(r.getBody());
+    }
+
     @ExceptionHandler(ForbiddenException.class)
     ResponseEntity<ApiError> forbidden(ForbiddenException ex, HttpServletRequest req) {
         return build(HttpStatus.FORBIDDEN, ex.getMessage(), req);
