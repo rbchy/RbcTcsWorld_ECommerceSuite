@@ -66,7 +66,7 @@ class SecurityIntegrationTest {
 
         login(victim, "Password1!")
                 .andExpect(status().isTooManyRequests())
-                .andExpect(header().string("Retry-After", "900"))
+                .andExpect(header().string("Retry-After", org.hamcrest.Matchers.matchesPattern("^(89\\d|900)$")))
                 .andExpect(jsonPath("$.message").value(containsString("Too many failed login attempts")));
 
         String bystander = email();

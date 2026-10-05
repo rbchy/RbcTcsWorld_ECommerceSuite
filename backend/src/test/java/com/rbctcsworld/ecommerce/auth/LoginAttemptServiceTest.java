@@ -60,6 +60,14 @@ class LoginAttemptServiceTest {
     }
 
     @Test
+    void retryAfterIsRoundedUpSoWaitingThatLongIsEnough() {
+        fail(5);
+        clock.advance(Duration.ofMillis(300));                       // 899.7 s left
+        assertThatThrownBy(() -> service.checkAllowed(EMAIL))
+                .satisfies(e -> assertThat(((TooManyRequestsException) e).getRetryAfterSeconds()).isEqualTo(900));
+    }
+
+    @Test
     void afterTheLockExpiresCountingStartsAgain() {
         fail(5);
         clock.advance(Duration.ofMinutes(15));

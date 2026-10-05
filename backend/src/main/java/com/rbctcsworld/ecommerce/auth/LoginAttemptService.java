@@ -51,7 +51,9 @@ public class LoginAttemptService {
         Attempts a = attempts.get(email);
         Instant now = clock.instant();
         if (a != null && a.lockedUntil() != null && now.isBefore(a.lockedUntil())) {
-            long seconds = Math.max(1, Duration.between(now, a.lockedUntil()).toSeconds());
+            // round UP: a client that waits exactly Retry-After seconds must not still be locked
+            long millis = Duration.between(now, a.lockedUntil()).toMillis();
+            long seconds = Math.max(1, (millis + 999) / 1000);
             throw new TooManyRequestsException(
                     "Too many failed login attempts. Try again in " + seconds + " seconds.", seconds);
         }
