@@ -40,7 +40,8 @@ public class SecurityConfig {
             .headers(h -> h
                 .contentSecurityPolicy(c -> c.policyDirectives("default-src 'none'; frame-ancestors 'none'"))
                 .referrerPolicy(r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
-                .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy", "camera=(), microphone=(), geolocation=()")))
+                .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy", "camera=(), microphone=(), geolocation=()"))
+                .addHeaderWriter(new StaticHeadersWriter("Cross-Origin-Resource-Policy", "same-origin")))   // found by OWASP ZAP (rule 90004)
             .authorizeHttpRequests(a -> a
                 .requestMatchers("/api/auth/**", "/actuator/health", "/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/v3/api-docs", "/v3/api-docs/**").permitAll()   // OpenAPI spec (used by OWASP ZAP)

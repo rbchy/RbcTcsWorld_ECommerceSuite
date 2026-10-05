@@ -108,6 +108,7 @@ class InputAndExposureTest {
                 () -> assertEquals("DENY", r.header("X-Frame-Options")),
                 () -> assertEquals("default-src 'none'; frame-ancestors 'none'", r.header("Content-Security-Policy")),
                 () -> assertEquals("no-referrer", r.header("Referrer-Policy")),
+                () -> assertEquals("same-origin", r.header("Cross-Origin-Resource-Policy")),
                 () -> assertTrue(String.valueOf(r.header("Cache-Control")).contains("no-store"), "Cache-Control"),
                 () -> assertTrue(r.header("X-Powered-By") == null, "no X-Powered-By"),
                 () -> assertFalse(String.valueOf(r.header("Server")).matches(".*\\d.*"), "Server header without version"));
