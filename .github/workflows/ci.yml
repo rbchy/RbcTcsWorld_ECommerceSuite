@@ -152,6 +152,9 @@ jobs:
       - name: Dependency findings as annotations
         if: always()
         run: security/osv-summary.sh osv-results.json
+      - name: Newest patch versions on Maven Central
+        if: always()
+        run: security/latest-versions.sh
 
       # ---------- running application (DAST) ----------
       - name: Build and start backend
