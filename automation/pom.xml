@@ -28,8 +28,8 @@
     <cucumber.version>7.18.0</cucumber.version>
     <selenium.version>4.25.0</selenium.version>
     <restassured.version>5.5.0</restassured.version>
-    <jackson.version>2.19.2</jackson.version>
-    <postgresql.version>42.7.7</postgresql.version>
+    <jackson.version>2.21.7</jackson.version>
+    <postgresql.version>42.7.12</postgresql.version>
     <allure.version>2.29.1</allure.version>
     <allure.report.version>2.29.0</allure.report.version>
     <!-- shown on the Allure "Environment" widget; override with -DbaseUrl=... -->
