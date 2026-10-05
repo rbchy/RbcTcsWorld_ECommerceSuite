@@ -69,6 +69,24 @@ public class HomePage extends BasePage {
         return wait.until(d -> d.findElement(rating).getDomAttribute("data-average"));
     }
 
+    /** "Showing 20 of 245 products" -> 245 */
+    public int catalogTotal() {
+        productCount();                                  // wait for the first page, otherwise "0 of 0"
+        return Integer.parseInt(text("catalog-total").replaceAll(".* of (\\d+) products.*", "$1"));
+    }
+
+    public boolean canLoadMore() {
+        return isShown("load-more");
+    }
+
+    /** Clicks "Load more" and waits until more cards are on the page. */
+    public HomePage loadMore() {
+        int before = all(PRODUCT_CARD).size();
+        click("load-more");
+        wait.until(d -> all(PRODUCT_CARD).size() > before);
+        return this;
+    }
+
     public String flash() {
         return text("flash");
     }

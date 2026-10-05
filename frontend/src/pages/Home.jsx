@@ -3,17 +3,28 @@ import api, { errorText, money } from '../api';
 import { getSession, go } from '../session';
 import Stars from './Stars';
 
+const PAGE_SIZE = 20;
+
 export default function Home() {
   const [products, setProducts] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
   const [flash, setFlash] = useState('');
 
-  useEffect(() => {
-    api.get('/products', { params: { q } })
-      .then(r => { setProducts(r.data); setError(''); })
-      .catch(e => { setProducts([]); setError(errorText(e)); });
-  }, [q]);
+  // The catalog is paginated (DEF-007): 20 products per request, "Load more" fetches the next page.
+  const load = (pageNo, append) =>
+    api.get('/products', { params: { q, page: pageNo, size: PAGE_SIZE } })
+      .then(r => {
+        setProducts(prev => (append ? [...prev, ...r.data] : r.data));
+        setTotal(Number(r.headers['x-total-count'] ?? r.data.length));
+        setPage(pageNo);
+        setError('');
+      })
+      .catch(e => { if (!append) setProducts([]); setError(errorText(e)); });
+
+  useEffect(() => { load(0, false); }, [q]);
 
   const add = async (productId, quantity) => {
     if (!getSession()) { go('/login'); return; }
@@ -47,9 +58,13 @@ export default function Home() {
       </header>
       {error && <p data-testid="error-banner" className="error">{error}</p>}
       {flash && <p data-testid="flash" className="ok">{flash}</p>}
+      <p className="muted small" data-testid="catalog-total">Showing {products.length} of {total} products</p>
       <section className="grid" data-testid="product-grid">
         {products.map(p => <ProductCard key={p.id} p={p} onAdd={add} onWish={wish} />)}
       </section>
+      {products.length < total && (
+        <p className="center"><button className="ghost" data-testid="load-more" onClick={() => load(page + 1, true)}>Load more</button></p>
+      )}
     </>
   );
 }

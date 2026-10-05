@@ -1,6 +1,8 @@
 package com.rbctcsworld.ecommerce.product;
 
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
@@ -12,9 +14,10 @@ import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    List<Product> findByActiveTrueOrderByIdAsc();
+    /** One page of the active catalog (DEF-007: the catalog is never returned in one piece). */
+    Page<Product> findByActiveTrue(Pageable pageable);
 
-    List<Product> findByNameContainingIgnoreCaseAndActiveTrueOrderByIdAsc(String name);
+    Page<Product> findByNameContainingIgnoreCaseAndActiveTrue(String name, Pageable pageable);
 
     Optional<Product> findByIdAndActiveTrue(Long id);
 

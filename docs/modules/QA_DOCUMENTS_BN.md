@@ -54,7 +54,7 @@
 - **Heat map:** এক নজরে দেখায় কোন ঝুঁকি কোথায় পড়েছে।
 
 ## ৪. Traceability Matrix (RTM): সবচেয়ে শক্তিশালী অংশ
-- **৫৬টা requirement আর ২৬৮টা টেস্ট রেফারেন্স।** coverage ৯৮%। একমাত্র ফাঁক হলো pagination (REQ-CAT-04), যার জন্য একটা খোলা বাগ (DEF-007) আছে।
+- **৫৬টা requirement আর ২৮১টা টেস্ট রেফারেন্স।** coverage **১০০%**। শেষ ফাঁকটা ছিল pagination (REQ-CAT-04), যেটা DEF-007 ঠিক করার সাথে বন্ধ হয়েছে (নিচে দেখুন)।
 - **নিজে নিজে যাচাই হয় (living documentation):**
   - `docs/qa/check_rtm.py` CI-তে প্রতিবার চলে।
   - কেউ কোনো টেস্টের নাম বদলালে বা মুছে ফেললে, আর RTM হালনাগাদ না করলে build লাল হয়।
@@ -62,25 +62,53 @@
 
 ## ৫. Defect Reports: ১২টা আসল বাগ
 - **ধরন:** ৮টা প্রোডাক্টের বাগ, ৪টা টেস্ট-কোডের বাগ।
-- **Severity:** ১টা Critical, ৩টা High, ৫টা Medium, ৩টা Low। এর মধ্যে ১টা এখনো খোলা: DEF-007, pagination।
+- **Severity:** ১টা Critical, ৩টা High, ৫টা Medium, ৩টা Low। **১২টাই বন্ধ।**
 - **প্রতিটা রিপোর্টে থাকে:** reproduce করার ধাপ, প্রত্যাশিত আর আসল ফলাফল, প্রমাণ, **root cause**, সমাধান, আর **regression test**।
 - **"কোন স্তর কোন বাগ ধরেছে" টেবিল:** দেখায় প্রতিটা টেস্ট-স্তর কেন দরকার। যেমন pagination-এর সমস্যা শুধু k6 ধরেছে, আর Linux-এ "a" ঢোকার বাগ শুধু CI ধরেছে।
 - **Severity আর Priority আলাদা:** severity মানে ক্ষতি কতটা, priority মানে কত তাড়াতাড়ি ঠিক করতে হবে।
 
 ## ৬. Test Summary Report
-- **সিদ্ধান্ত: GO।** একটা Medium বাগ কারণ লিখে পরের release-এর জন্য মেনে নেওয়া হয়েছে।
+- **সিদ্ধান্ত: GO।** কোনো বাগ খোলা নেই, coverage ১০০%।
 - **আসল সংখ্যা:**
-  - **CI-তে টেস্ট:** **৪৯৩টা, ৪৯৩টা পাস** (backend ২৪০, automation ২৫৩)।
+  - **CI-তে টেস্ট:** **৫১৭টা, ৫১৭টা পাস, একটাও skip নয়** (backend ২৪৮, automation ২৬৯)।
   - **Performance:** load টেস্টে ১৮,৭০১টা request, 0% fail। flash sale-এ ৩০০ জন ক্রেতা, ৫০টা পণ্য, শূন্য overselling।
   - **Security:** ZAP-এ medium বা high কিছু নেই। দুর্বল লাইব্রেরি ২১টা থেকে ০।
 - **মেনে নেওয়া ঝুঁকি আর শিক্ষা (lessons learned):** কোনটা কেন মেনে নেওয়া হয়েছে, আর এই প্রজেক্ট থেকে কী শেখা গেল।
+
+## উদাহরণ: DEF-007, বাগ ধরা থেকে সমাধান পর্যন্ত পুরো চক্র
+একজন Senior QA বাগ শুধু রিপোর্ট করেন না, সমাধানটা যে কাজ করছে সেটা প্রমাণও করেন। এই বাগে পুরো চক্রটা দেখা যায়:
+
+1. **খুঁজে পাওয়া:** আপনার Mac-এ k6 load টেস্টের রিপোর্টে `GET /api/products` ছিল সবচেয়ে ধীর read (p95 22 ms)। কারণ এই endpoint পুরো ক্যাটালগ একবারে পাঠাত।
+2. **রিপোর্ট করা:** DEF-007 লেখা হলো, Medium/P2। RTM-এ এটা একমাত্র ফাঁক হিসেবে দেখানো হলো।
+3. **আলাদা branch:** `fix/def-007-pagination`।
+4. **আগে টেস্ট, তাই CI লাল:**
+   - প্রথম commit-এ শুধু টেস্ট ছিল: API, k6 আর UI।
+   - পুরোনো কোডের বিরুদ্ধে CI **লাল** হলো, ১২টা fail। এতে প্রমাণ হলো টেস্টগুলো সত্যিই বাগটা ধরে।
+   - সাথে "আগের" মাপও পাওয়া গেল: প্রতিটা response-এ **২৩৪টা পণ্য, ৩২,৯২৭ byte**।
+5. **সমাধান, তারপর CI সবুজ:**
+   - পণ্যের তালিকা এখন পাতায় পাতায় আসে: `page`, `size` (১ থেকে ১০০, default ২০) আর `sort`।
+   - response এখনো একটা JSON array। পাতার তথ্য, যেমন মোট কত পণ্য আর পরের পাতার লিংক, যায় **header-এ** (`X-Total-Count`, `Link`), GitHub API-র মতো। তাই পুরোনো client কিছু না বদলেই কাজ করে (backward compatible)।
+   - Frontend-এ এসেছে "Load more" বোতাম।
+6. **"পরের" মাপ, একই পরিবেশে:** প্রতিটা response-এ **২০টা পণ্য, ২,৯৯৮ byte, অর্থাৎ ৯১% ছোট**। এখন ক্যাটালগ যত বড়ই হোক, response-এর আকার একই থাকে।
+7. **সৎ ফলাফল:** CI-তে latency প্রায় একই থেকেছে (৬ থেকে ৭ ms)।
+   - কারণ CI-র ক্যাটালগ ছোট, মাত্র ২৩৪টা পণ্য।
+   - তার উপর এখন প্রতিটা request-এ মোট সংখ্যা গোনার জন্য একটা `COUNT(*)` query চলে।
+   - এটা লুকাইনি, রিপোর্টে লিখে দিয়েছি। সমাধানের আসল লাভ হলো খরচ আর ক্যাটালগের সাথে বাড়ে না।
+   - Interview-তে এমন সৎ বিশ্লেষণ খুব ভালো প্রভাব ফেলে।
+8. **বন্ধ করা:**
+   - Regression test যোগ হয়েছে।
+   - RTM coverage ১০০%।
+   - Summary report-এ ০টা বাগ খোলা।
+   - CI-তে k6 প্রতিবার response-এর আকার পরীক্ষা করে, ১০ KB-এর বেশি হলে build fail।
+
+**Interview-এ:** "Tell me about a bug from discovery to fix" প্রশ্নের জন্য এটাই সবচেয়ে ভালো উত্তর। Branch-এর commit history (লাল থেকে সবুজ) আর PR, দুটোই GitHub-এ দেখা যায়।
 
 ## Interview-এ কীভাবে ব্যবহার করবেন
 **প্রশ্ন: "How do you decide what to test?"**
 > "Risk-based. আমার risk register-এ ২১টা ঝুঁকি আছে, প্রতিটার score সম্ভাবনা × ক্ষতি। সবচেয়ে বড় তিনটা, মানে overselling, brute force আর দুর্বল dependency, প্রতিটার জন্য CI-তে একটা স্বয়ংক্রিয় gate আছে।"
 
 **প্রশ্ন: "How do you know your coverage is complete?"**
-> "আমার একটা traceability matrix আছে: ৫৬টা requirement থেকে ২৬৮টা টেস্টে লিংক। একটা script CI-তে যাচাই করে যে প্রতিটা রেফারেন্স করা টেস্ট আসলেই আছে। coverage ৯৮%, আর একমাত্র ফাঁকটার জন্য একটা খোলা defect আছে, কারণসহ।"
+> "আমার একটা traceability matrix আছে: ৫৬টা requirement থেকে ২৮১টা টেস্টে লিংক। একটা script CI-তে যাচাই করে যে প্রতিটা রেফারেন্স করা টেস্ট আসলেই আছে। coverage ১০০%। শেষ ফাঁকটা আমি নিজে performance টেস্টে খুঁজে পেয়েছিলাম, তারপর test-first পদ্ধতিতে ঠিক করেছি।"
 
 **প্রশ্ন: "Tell me about a bug you found."**
 > STAR পদ্ধতিতে DEF-004 (timing) বা DEF-008 (Linux-এ "a") বলুন:
@@ -97,6 +125,6 @@
 cd ~/Eclipse-Workspace-QA/RbcTcsWorld_ECommerceSuite
 git pull
 python3 docs/qa/check_rtm.py
-# ফলাফল: RTM: 56 requirements, 268 test references, 55 covered, gaps: REQ-CAT-04
+# ফলাফল: RTM: 56 requirements, 281 test references, 56 covered, gaps: none
 open docs/qa/README.md                       # অথবা GitHub-এ docs/qa ফোল্ডার
 ```

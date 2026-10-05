@@ -27,7 +27,7 @@ Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured
 | REQ-CAT-01 | Catalog and search are public; search is case-insensitive | `ApiIntegrationTest#catalogIsPublicAndSeeded`, `ProductApiTest#listProducts`, `ProductApiTest#search`, `HomePageUiTest#searchFilters`, `bdd:Customer opens catalog`, `bdd:Search is case-insensitive` | I A B UI | Pass |
 | REQ-CAT-02 | Admin product CRUD updates every field, SKU unique (409), validation (400), delete is soft | `ProductServiceTest#updateChangesEveryField_regressionForStockOnlyBug`, `ProductServiceTest#createRejectsDuplicateSku`, `ProductServiceTest#deleteIsSoftDelete`, `ApiIntegrationTest#adminUpdateChangesAllFieldsAndSoftDeleteHidesProduct`, `ProductApiTest#adminCrudLifecycle`, `ProductApiTest#duplicateSku`, `ProductApiTest#invalidProduct` | U I A | Pass |
 | REQ-CAT-03 | Unknown product -> 404 JSON (not 500); non-numeric id -> 400 | `ApiIntegrationTest#missingProductIs404NotA500`, `ProductApiTest#missingProduct`, `ProductApiTest#badId`, `bdd:Unknown product returns 404 with a JSON error` | I A B | Pass |
-| REQ-CAT-04 | Catalog list is paginated (bounded response size) | - | - | **Gap: [DEF-007](DEFECT_REPORTS.md#def-007) open** |
+| REQ-CAT-04 | Catalog list is paginated: size 1..100 (default 20), stable sorts, totals and Link headers, bounded response size ([DEF-007](DEFECT_REPORTS.md#def-007)) | `ProductServiceTest#invalidPageSizeOrSortIs400`, `ProductServiceTest#requestedPageAndStableSortReachTheDatabase`, `ProductServiceTest#nameSortIgnoresCaseAndEndsWithIdSoPagesAreStable`, `ApiIntegrationTest#catalogIsPaginatedWithTotalsAndLinks_DEF007`, `CatalogPaginationTest#defaultPageIsBounded`, `CatalogPaginationTest#walkAllPages`, `CatalogPaginationTest#linkHeader`, `CatalogPaginationTest#boundaries`, `CatalogPaginationTest#sorting`, `CatalogPaginationTest#responseSizeIsBounded`, `HomePageUiTest#loadMore`, k6 `performance/tests/catalog.js` | U I A UI P | Pass |
 
 ## Cart
 
@@ -96,7 +96,7 @@ Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured
 | REQ-UI-01 | Customer can register, buy with a coupon, see a declined card error and pay | `UiShoppingJourneyTest#endToEndPurchase` | UI | Pass |
 | REQ-UI-02 | Protected pages ask for login and return to the page afterwards | `UiAuthTest#protectedRouteRedirect` | UI | Pass |
 | REQ-UI-03 | Delivered order shows tracking and accepts a return | `UiOrderAfterSalesTest#trackingAndReturn` | UI | Pass |
-| REQ-UI-04 | Storefront loads with products and search | `HomePageUiTest#homeLoads`, `HomePageUiTest#searchFilters` | UI | Pass |
+| REQ-UI-04 | Storefront loads with products, search and Load more | `HomePageUiTest#homeLoads`, `HomePageUiTest#searchFilters`, `HomePageUiTest#loadMore` | UI | Pass |
 
 ## Non-functional
 
@@ -114,7 +114,7 @@ Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured
 | Area | Requirements | Covered | Gaps |
 |---|---|---|---|
 | Identity and access | 7 | 7 | - |
-| Catalog | 4 | 3 | REQ-CAT-04 pagination (DEF-007) |
+| Catalog | 4 | 4 | - |
 | Cart | 3 | 3 | - |
 | Orders and inventory | 6 | 6 | - |
 | Pricing, coupons, payments | 9 | 9 | - |
@@ -122,4 +122,4 @@ Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured
 | Reviews and wishlist | 11 | 11 | - |
 | Storefront UI | 4 | 4 | - |
 | Non-functional | 6 | 6 | - |
-| **Total** | **56** | **55 (98 %)** | **1** |
+| **Total** | **56** | **56 (100 %)** | **0** |

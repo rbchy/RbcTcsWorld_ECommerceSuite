@@ -1,7 +1,11 @@
 package com.rbctcsworld.ecommerce.product;
 
+import com.rbctcsworld.ecommerce.common.exception.BusinessRuleException;
 import com.rbctcsworld.ecommerce.common.exception.ConflictException;
 import com.rbctcsworld.ecommerce.common.exception.NotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,11 +21,34 @@ public class ProductService {
         this.repo = repo;
     }
 
+    public static final int DEFAULT_PAGE_SIZE = 20;
+    public static final int MAX_PAGE_SIZE = 100;
+    public static final List<String> SORTS = List.of("id", "name", "price_asc", "price_desc");
+
+    /**
+     * DEF-007: one page of the active catalog instead of every product. Page 0-based, size 1..100.
+     * Every sort ends with the id, so pages are stable (no product appears twice or goes missing).
+     */
     @Transactional(readOnly = true)
-    public List<Product> all(String q) {
+    public Page<Product> page(String q, int page, int size, String sort) {
+        if (page < 0) throw new BusinessRuleException("page must be 0 or greater");
+        if (size < 1 || size > MAX_PAGE_SIZE) throw new BusinessRuleException("size must be between 1 and " + MAX_PAGE_SIZE);
+        String s = sort == null || sort.isBlank() ? "id" : sort.trim().toLowerCase();
+        if (!SORTS.contains(s)) throw new BusinessRuleException("sort must be one of " + SORTS);
+        PageRequest request = PageRequest.of(page, size, sortOf(s));
         return (q == null || q.isBlank())
-                ? repo.findByActiveTrueOrderByIdAsc()
-                : repo.findByNameContainingIgnoreCaseAndActiveTrueOrderByIdAsc(q.trim());
+                ? repo.findByActiveTrue(request)
+                : repo.findByNameContainingIgnoreCaseAndActiveTrue(q.trim(), request);
+    }
+
+    static Sort sortOf(String sort) {
+        Sort byId = Sort.by(Sort.Order.asc("id"));
+        return switch (sort) {
+            case "name" -> Sort.by(Sort.Order.asc("name").ignoreCase()).and(byId);
+            case "price_asc" -> Sort.by(Sort.Order.asc("price")).and(byId);
+            case "price_desc" -> Sort.by(Sort.Order.desc("price")).and(byId);
+            default -> byId;
+        };
     }
 
     /** Deleted (inactive) products are invisible: 404, same as never existed. */

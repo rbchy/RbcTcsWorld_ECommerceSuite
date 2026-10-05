@@ -78,9 +78,11 @@ jobs:
         run: |
           k6 run -q -e DURATION=30s performance/tests/smoke.js
           k6 run -q -e BUYERS=60 -e STOCK=15 performance/tests/flash-sale.js
+          # catalog size/latency after the whole suite has filled the catalog (DEF-007 regression)
+          k6 run -q -e DURATION=20s performance/tests/catalog.js
       - name: k6 key numbers as annotations
         if: always()
-        run: for t in smoke flash-sale; do performance/summary-notice.sh $t; done
+        run: for t in smoke flash-sale catalog; do performance/summary-notice.sh $t; done
       - uses: actions/upload-artifact@v4
         if: always()
         with:

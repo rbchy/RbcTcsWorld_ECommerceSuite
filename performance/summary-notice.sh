@@ -15,6 +15,7 @@ jq -r --arg t "$1" '
     + " | write p95 \(r(.metrics["http_req_duration{kind:write}"].values["p(95)"] // null)) ms"
     + " | journey p95 \(r(v("purchase_journey_ms";"p(95)"))) ms | orders paid \(v("orders_paid";"count") // "-")"
     + " | checks \(r((v("checks";"rate") // 0) * 100))%"
+    + (if v("catalog_bytes";"p(95)") != null then " | catalog bytes p95 \(r(v("catalog_bytes";"p(95)"))) | catalog items p95 \(r(v("catalog_items";"p(95)"))) | catalog p95 \(r(.metrics["http_req_duration{name:GET /api/products}"].values["p(95)"] // null)) ms" else "" end)
     + (if v("flash_orders_created";"count") != null then " | flash created \(v("flash_orders_created";"count")) rejected \(v("flash_orders_rejected";"count")) stock left \(v("flash_stock_left";"count"))" else "" end)
     + " | thresholds failed: \(if ($failed|length)==0 then "none" else ($failed|join(", ")) end)"
 ' "$f"

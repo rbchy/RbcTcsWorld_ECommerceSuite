@@ -14,7 +14,7 @@ only after a regression test was added; the test is named in the report. Test-co
 | [DEF-004](#def-004) | Response time reveals whether an e-mail has an account | Product - security | Medium | P2 | Code review + timing test | Closed |
 | [DEF-005](#def-005) | Shipped libraries with known critical CVEs (Tomcat CVSS 9.8) | Product - security | Critical | P1 | OSV-Scanner in CI | Closed |
 | [DEF-006](#def-006) | Missing security headers (CSP, Referrer-Policy, CORP) | Product - security | Low | P3 | Header test + OWASP ZAP | Closed |
-| [DEF-007](#def-007) | Product catalog has no pagination, response grows with every product | Product - performance | Medium | P2 | k6 load test | **Open** |
+| [DEF-007](#def-007) | Product catalog has no pagination, response grows with every product | Product - performance | Medium | P2 | k6 load test | Closed |
 | [DEF-008](#def-008) | UI tests type an extra "a" into every field on Linux | Test code | High | P1 | CI (Linux) only | Closed |
 | [DEF-009](#def-009) | Flaky "stale element reference" in the purchase journey | Test code | Medium | P2 | CI, intermittent | Closed |
 | [DEF-010](#def-010) | `Retry-After` says 899 s, but the lock lasts 900 s | Product | Low | P3 | Integration test in CI | Closed |
@@ -169,7 +169,7 @@ OWASP ZAP additionally reported a missing `Cross-Origin-Resource-Policy` (rule 9
 |---|---|
 | Severity / Priority | Medium / P2 |
 | Component | `GET /api/products` |
-| Status | **Open** - fix planned |
+| Status | Closed - fixed on branch `fix/def-007-pagination` (tests first, then fix) |
 | Found by | k6 load test report (latency per endpoint) |
 
 **Evidence (load test, 50 users, 8 minutes, Mac):** `GET /api/products` was the slowest read:
@@ -179,10 +179,35 @@ p95 22 ms, max 95 ms, while product page, search and reviews stayed at 8-10 ms.
 response size) grows with each product; in the test environment it grows with every test run.
 With a real catalog of thousands of products the page would get slow and expensive.
 
-**Proposed fix:** `GET /api/products?page=0&size=20&sort=name` with a maximum page size (e.g. 100),
-response with `content`, `totalElements`, `totalPages`; frontend "load more".
-**Tests to add:** page boundaries (size 0, 101, last page), stable sort order, k6 comparison before/after.
-**Traceability:** REQ-CAT-04 is the only open gap in the [RTM](TRACEABILITY_MATRIX.md).
+**Fix (backward compatible):** `GET /api/products?page=0&size=20&sort=id|name|price_asc|price_desc`,
+size 1..100 (default 20), every sort ends with `id` so pages are stable. The body **stays a JSON array**
+(old clients keep working); the paging information is in headers: `X-Total-Count`, `X-Total-Pages`,
+`X-Page`, `X-Page-Size` and an RFC 8288 `Link` header (`rel="next"` / `rel="prev"`), like the GitHub API.
+Storefront: "Showing 20 of N products" and a **Load more** button.
+
+**How it was fixed - test first:**
+1. Commit 1 added the tests only. CI went **red** with 12 failures (no headers, size 0/101 accepted,
+   no sorting) and k6 failed its `catalog_bytes` threshold - proof that the tests detect the defect.
+2. Commit 2 added the fix. CI went **green**.
+
+**Evidence - same CI environment, after the whole suite has filled the catalog (k6 `catalog.js`):**
+
+| | Before | After |
+|---|---|---|
+| Products per response | 234 (whole catalog) | 20 |
+| Response size p95 | 32,927 bytes | 2,998 bytes (**-91 %**) |
+| Response size growth | grows with every product | constant |
+| Latency p95 (CI) | 6.1 ms | 7.2-7.5 ms |
+
+Latency on CI did not change measurably: with only 234 products the JSON is small either way, and
+the paginated query adds a `COUNT(*)` for the total. The win is that size and latency **no longer
+grow with the catalog**; on the larger local database the endpoint was the slowest read (p95 22 ms).
+Reported honestly: the fix bounds the cost, it did not make a small catalog faster.
+
+**Regression tests:** `CatalogPaginationTest` (bounded default page, all pages exactly once, Link header,
+boundaries, sorting, size < 10 KB), `ProductServiceTest#invalidPageSizeOrSortIs400`,
+`ProductServiceTest#requestedPageAndStableSortReachTheDatabase`, `ApiIntegrationTest#catalogIsPaginatedWithTotalsAndLinks_DEF007`,
+`HomePageUiTest#loadMore`, k6 `performance/tests/catalog.js` (threshold `catalog_bytes p95 < 10 KB`, every CI build).
 
 ---
 
