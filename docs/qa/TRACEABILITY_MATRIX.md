@@ -1,0 +1,125 @@
+# Requirements Traceability Matrix (RTM)
+
+Every business rule and non-functional requirement is linked to the automated tests that prove it.
+References are real test names (Class#method, or bdd: followed by a Cucumber scenario name).
+`python3 docs/qa/check_rtm.py` (run in CI) fails if a referenced test no longer exists, so this
+matrix cannot silently go out of date.
+
+Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured vs running backend) ·
+**B** BDD (Cucumber) · **D** database validation · **UI** Selenium · **P** performance (k6) · **S** security / scans.
+
+## Identity and access
+
+| ID | Requirement | Tests | Levels | Status |
+|---|---|---|---|---|
+| REQ-AUTH-01 | Registration creates a CUSTOMER (never ADMIN), e-mail is normalised, duplicate e-mail -> 409, invalid input -> 400 with field errors | `AuthServiceTest#registerNormalizesEmailAndCreatesCustomer`, `AuthServiceTest#registerDuplicateEmailIsConflict`, `ApiIntegrationTest#duplicateRegistrationIs409`, `ApiIntegrationTest#invalidEmailAndShortPasswordAre400WithFieldErrors`, `AuthApiTest#registerCustomer`, `AuthApiTest#emailIsNormalized`, `AuthApiTest#duplicateRegistration`, `AuthApiTest#validationErrors`, `AuthenticationAttackTest#massAssignment`, `SecurityIntegrationTest#roleInTheRegistrationBodyIsIgnored` | U I A S | Pass |
+| REQ-AUTH-02 | Login returns a JWT; unknown e-mail and wrong password give the same 401 message | `AuthServiceTest#loginWithWrongPasswordIsInvalidCredentialsAndCountsAsFailure`, `ApiIntegrationTest#wrongPasswordIs401`, `AuthApiTest#invalidLoginIs401`, `AuthApiTest#adminLogin`, `UiAuthTest#wrongPassword` | U I A UI | Pass |
+| REQ-AUTH-03 | 5 failed logins for one e-mail within 15 min lock it for 15 min: 429 + Retry-After (rounded up), also for the right password and for unknown e-mails | `LoginAttemptServiceTest#fifthFailureLocksForFifteenMinutesWithRetryAfter`, `LoginAttemptServiceTest#retryAfterIsRoundedUpSoWaitingThatLongIsEnough`, `LoginAttemptServiceTest#failuresSpreadOverMoreThanTheWindowDoNotLock`, `LoginAttemptServiceTest#successResetsTheCounter`, `AuthServiceTest#lockedAccountIsRejectedBeforeThePasswordIsEvenChecked`, `SecurityIntegrationTest#fiveWrongPasswordsLockTheAccountEvenForTheRightPassword`, `AuthenticationAttackTest#bruteForceLockout`, `AuthenticationAttackTest#lockoutDoesNotEnumerate` | U I A S | Pass |
+| REQ-AUTH-04 | Login response time does not reveal whether an account exists | `AuthServiceTest#unknownEmailStillRunsAPasswordCheckSoTimingRevealsNothing`, `AuthenticationAttackTest#noTimingEnumeration` | U A S | Pass |
+| REQ-AUTH-05 | Only valid tokens authenticate: signature, issuer and expiry are checked; `alg:none`, edited and foreign tokens are rejected; the public dev secret cannot run in `prod` | `JwtServiceTest#editedPayloadBreaksTheSignature`, `JwtServiceTest#unsignedAlgNoneTokenIsRejected`, `JwtServiceTest#tokenSignedWithAnotherKeyIsRejected`, `JwtServiceTest#expiredTokenIsRejected`, `JwtServiceTest#tokenFromAnotherIssuerIsRejected`, `JwtServiceTest#publicDevSecretIsRefusedInProduction`, `SecurityIntegrationTest#forgedTokensAreTreatedAsAnonymous`, `AuthenticationAttackTest#algNone`, `AuthenticationAttackTest#editedPayload`, `AuthenticationAttackTest#guessedSecret`, `AuthenticationAttackTest#malformedHeaders` | U I A S | Pass |
+| REQ-AUTH-06 | Role-based access: admin functions only for ADMIN (anonymous 401, customer 403) | `AccessControlMatrixTest#matrix`, `AuthenticationAttackTest#customerTokenCannotEscalate`, `ApiIntegrationTest#customerCannotCreateProduct403`, `OrderIntegrationTest#adminEndpointsAreAdminOnly`, `OrderApiTest#adminOnly` | I A S | Pass |
+| REQ-AUTH-07 | Passwords: 8-72 characters (bcrypt limit) | `AuthenticationAttackTest#weakPasswords`, `AuthenticationAttackTest#bcryptLimit`, `AuthApiTest#validationErrors` | A S | Pass |
+
+## Catalog
+
+| ID | Requirement | Tests | Levels | Status |
+|---|---|---|---|---|
+| REQ-CAT-01 | Catalog and search are public; search is case-insensitive | `ApiIntegrationTest#catalogIsPublicAndSeeded`, `ProductApiTest#listProducts`, `ProductApiTest#search`, `HomePageUiTest#searchFilters`, `bdd:Customer opens catalog`, `bdd:Search is case-insensitive` | I A B UI | Pass |
+| REQ-CAT-02 | Admin product CRUD updates every field, SKU unique (409), validation (400), delete is soft | `ProductServiceTest#updateChangesEveryField_regressionForStockOnlyBug`, `ProductServiceTest#createRejectsDuplicateSku`, `ProductServiceTest#deleteIsSoftDelete`, `ApiIntegrationTest#adminUpdateChangesAllFieldsAndSoftDeleteHidesProduct`, `ProductApiTest#adminCrudLifecycle`, `ProductApiTest#duplicateSku`, `ProductApiTest#invalidProduct` | U I A | Pass |
+| REQ-CAT-03 | Unknown product -> 404 JSON (not 500); non-numeric id -> 400 | `ApiIntegrationTest#missingProductIs404NotA500`, `ProductApiTest#missingProduct`, `ProductApiTest#badId`, `bdd:Unknown product returns 404 with a JSON error` | I A B | Pass |
+| REQ-CAT-04 | Catalog list is paginated (bounded response size) | - | - | **Gap: [DEF-007](DEFECT_REPORTS.md#def-007) open** |
+
+## Cart
+
+| ID | Requirement | Tests | Levels | Status |
+|---|---|---|---|---|
+| REQ-CART-01 | Add, merge same product, update, remove; quantity 1..10; quantity <= stock (409) | `CartServiceTest#addingSameProductAgainMergesQuantity`, `CartServiceTest#addMoreThanStockIsConflict`, `CartServiceTest#mergedQuantityAboveLimitIsRejected`, `ApiIntegrationTest#addUpdateRemoveFlow`, `CartApiTest#fullLineLifecycle`, `CartApiTest#stockBoundary`, `CartApiTest#invalidQuantity`, `CartApiTest#mergeAboveStock`, `bdd:Adding the same product again merges the quantity`, `bdd:Cannot add more than the available stock`, `bdd:Quantity outside 1..10 is rejected` | U I A B | Pass |
+| REQ-CART-02 | Cart needs login and is private (other customer's item -> 404) | `CartServiceTest#updatingAnotherCustomersItemIsNotFound`, `ApiIntegrationTest#customerCannotTouchAnotherCustomersCartItem_IDOR`, `CartApiTest#requiresAuthentication`, `CartApiTest#idorProtection`, `bdd:Anonymous user cannot see a cart` | U I A B | Pass |
+| REQ-CART-03 | A line becomes `available=false` when the product is deleted or stock drops | `CartServiceTest#lineIsUnavailableWhenStockDropsBelowCartQuantity`, `CartApiTest#lineBecomesUnavailable` | U A | Pass |
+
+## Orders and inventory
+
+| ID | Requirement | Tests | Levels | Status |
+|---|---|---|---|---|
+| REQ-ORD-01 | Placing an order snapshots prices, reserves stock, empties the cart; empty cart -> 400 | `OrderServiceTest#placeOrderSnapshotsPricesReservesStockAndClearsCart`, `OrderServiceTest#emptyCartCannotBeOrdered`, `OrderIntegrationTest#placeOrderReducesStockSnapshotsPriceAndEmptiesCart`, `OrderApiTest#placeOrderHappyPath`, `OrderApiTest#priceSnapshot`, `OrderDatabaseTest#placeOrderPersistsEverything`, `bdd:Order from cart reduces stock and empties the cart`, `bdd:An empty cart cannot be ordered` | U I A B D | Pass |
+| REQ-ORD-02 | All or nothing: if one line lacks stock nothing is reserved and the cart is kept | `OrderServiceTest#stockFailureLeavesCartUntouched`, `OrderIntegrationTest#oneLineWithoutStockRollsBackTheWholeOrder`, `OrderApiTest#allOrNothing` | U I A | Pass |
+| REQ-ORD-03 | No overselling under concurrency; stock never negative | `OrderConcurrencyIntegrationTest#lastUnitsCannotBeOversold`, `InventoryConcurrencyTest#flashSale`, `OrderDatabaseTest#noNegativeStock`, k6 `performance/tests/flash-sale.js` | I A D P | Pass |
+| REQ-ORD-04 | Cancel restores stock exactly once (second cancel 409) and refunds a paid order | `OrderServiceTest#cancellingTwiceIsConflict`, `OrderServiceTest#cancellingAPaidOrderRefundsTheTotal`, `OrderIntegrationTest#cancelRestoresStockOnceAndRecordsMovement`, `OrderApiTest#cancelRestoresStockOnce`, `OrderDatabaseTest#cancelPersistsEverything`, `UiShoppingJourneyTest#cancelOrder`, `bdd:Cancelling an order gives the stock back`, `bdd:An order cannot be cancelled twice` | U I A B D UI | Pass |
+| REQ-ORD-05 | Order state machine allows only defined transitions; every change is on the timeline | `OrderStateMachineTest#transitionTable`, `OrderStateMachineTest#terminalStatesHaveNoExit`, `FulfillmentApiTest#stateRules`, `LifecycleDatabaseTest#timelineMatchesStatus`, `bdd:A shipped order can no longer be cancelled` | U A B D | Pass |
+| REQ-ORD-06 | Orders are private (IDOR 404) and need login | `OrderServiceTest#anotherCustomersOrderIsNotFound`, `OrderIntegrationTest#customerCannotSeeOrCancelSomeoneElsesOrder_IDOR`, `OrderApiTest#idor`, `OrderApiTest#requiresLogin` | U I A | Pass |
+
+## Pricing, coupons, payments
+
+| ID | Requirement | Tests | Levels | Status |
+|---|---|---|---|---|
+| REQ-PRC-01 | 6 % tax on merchandise after discount; free shipping from 50.00 after discount, else 5.99; HALF_UP to 2 decimals; total never negative | `PricingServiceTest#breakdown`, `PricingServiceTest#discountLargerThanSubtotalIsCappedSoTotalNeverGoesNegative`, `PricingServiceTest#allAmountsHaveTwoDecimals`, `CheckoutApiTest#priceBreakdown`, `CheckoutApiTest#percentCoupon`, `CheckoutPaymentIntegrationTest#percentCouponCanUnlockFreeShipping`, `UiShoppingJourneyTest#endToEndPurchase`, `bdd:Price breakdown with and without coupons` | U I A B UI | Pass |
+| REQ-PRC-02 | A quote changes nothing (no stock, no coupon use) | `CheckoutApiTest#quoteHasNoSideEffects`, `CheckoutPaymentIntegrationTest#quoteShowsBreakdownAndChangesNothing` | I A | Pass |
+| REQ-CPN-01 | Unknown, expired, not-yet-valid, disabled coupon -> 400; minimum order amount | `CouponServiceTest#validityWindowBoundaries`, `CouponServiceTest#minimumOrderAmountBoundary`, `CouponServiceTest#unknownOrInactiveCodeIsInvalid`, `CheckoutApiTest#invalidCoupons`, `CheckoutApiTest#minimumOrderAmount`, `UiShoppingJourneyTest#invalidCoupon`, `bdd:Coupons that must be rejected` | U A B UI | Pass |
+| REQ-CPN-02 | Coupon once per customer (409) and global usage limit; failed order does not consume it | `CouponServiceTest#secondUseBySameCustomerIsConflict`, `CouponServiceTest#redeemFailsWhenAtomicCounterSaysLimitReached`, `CheckoutApiTest#oncePerCustomer`, `CheckoutApiTest#globalLimit`, `CheckoutPaymentIntegrationTest#couponOncePerCustomerAndFailedOrderChangesNothing` | U I A | Pass |
+| REQ-CPN-03 | Only ADMIN creates coupons; invalid definitions rejected | `CouponServiceTest#percentAbove100IsRejectedOnCreate`, `CheckoutApiTest#couponAdministration`, `CheckoutPaymentIntegrationTest#adminCouponManagementRules` | U I A | Pass |
+| REQ-PAY-01 | Approved card -> PAID; only the last 4 digits are stored; no card or CVV column exists | `PaymentServiceTest#approvedCardStoresOnlyLastFourDigits`, `PaymentServiceTest#payRequestNeverPrintsCardData`, `PaymentApiTest#approved`, `PaymentDatabaseTest#noCardDataColumns`, `PaymentDatabaseTest#onlyLast4Stored` | U A D | Pass |
+| REQ-PAY-02 | Declined card -> 402, FAILED attempt kept, order stays PLACED, retry works | `PaymentServiceTest#declinedCardIsRecordedAsFailedThen402`, `CheckoutPaymentIntegrationTest#declinedPaymentIs402ButTheFailedAttemptIsKept`, `PaymentApiTest#declined`, `PaymentDatabaseTest#declinedAttemptPersisted`, `UiShoppingJourneyTest#endToEndPurchase`, `bdd:Paying for an order with different test cards` | U I A B D UI | Pass |
+| REQ-PAY-03 | Bad Luhn, expired card, bad month, short CVV -> 400 and nothing recorded | `PaymentServiceTest#luhnOrLengthFailureIs400AndNothingRecorded`, `PaymentServiceTest#expiryBoundary`, `PaymentServiceTest#luhnAlgorithm`, `PaymentApiTest#cardValidation`, `CheckoutPaymentIntegrationTest#invalidOrExpiredCardIs400AndNothingIsRecorded` | U I A | Pass |
+| REQ-PAY-04 | No double charge (second pay 409); other customers cannot pay or read my payments | `OrderServiceTest#paidOrderCannotBePaidAgain`, `PaymentApiTest#noDoubleCharge`, `PaymentApiTest#idor`, `CheckoutPaymentIntegrationTest#cannotPaySomeoneElsesOrder` | U I A | Pass |
+
+## Fulfilment and returns
+
+| ID | Requirement | Tests | Levels | Status |
+|---|---|---|---|---|
+| REQ-FUL-01 | Only PAID orders ship (admin only); tracking number `CARRIER-` + 12 digits | `FulfillmentServiceTest#shipPaidOrderGeneratesTrackingNumber`, `FulfillmentServiceTest#onlyPaidOrdersShip`, `FulfillmentApiTest#ship`, `FulfillmentApiTest#accessControl`, `FulfillmentReturnIntegrationTest#shippingIsAdminOnlyAndCarrierValidated` | U I A | Pass |
+| REQ-FUL-02 | Deliver requires SHIPPED; timeline PLACED, PAID, SHIPPED, DELIVERED | `FulfillmentServiceTest#deliverRequiresShipped`, `FulfillmentApiTest#timeline`, `UiOrderAfterSalesTest#trackingAndReturn` | U A UI | Pass |
+| REQ-FUL-03 | Public tracking by number without login, without personal or price data | `FulfillmentApiTest#publicTracking`, `FulfillmentReturnIntegrationTest#fullLifecycleWithTimelineAndPublicTracking`, `bdd:Register, buy with a coupon, pay, ship, deliver, track, return and get refunded` | I A B | Pass |
+| REQ-RET-01 | Return only for DELIVERED orders, within 30 days, once per order | `ReturnServiceTest#lastMomentOfTheWindowIsAccepted`, `ReturnServiceTest#oneSecondAfterTheWindowIsRejected`, `ReturnServiceTest#notYetDeliveredCannotBeReturned`, `ReturnServiceTest#onlyOneReturnPerOrder`, `ReturnApiTest#notDeliveredYet`, `ReturnApiTest#validationAndDuplicates` | U A | Pass |
+| REQ-RET-02 | Decision table: DAMAGED full refund no restock; NO_LONGER_NEEDED total minus shipping; others full refund + restock | `ReturnServiceTest#approvalFollowsTheDecisionTable`, `ReturnApiTest#decisionTable`, `FulfillmentReturnIntegrationTest#damagedReturnIsNotRestockedAndRemorseReturnKeepsShipping`, `LifecycleDatabaseTest#fullLifecycleIsConsistent`, `bdd:Return decision table - refund and restock depend on the reason` | U I A B D | Pass |
+| REQ-RET-03 | Rejection puts the order back to DELIVERED without refund; a resolved return cannot be resolved again | `ReturnServiceTest#rejectionPutsOrderBackToDeliveredWithoutRefund`, `ReturnServiceTest#resolvedReturnCannotBeResolvedAgain`, `ReturnApiTest#rejection`, `bdd:A rejected return sends the order back to DELIVERED` | U A B | Pass |
+
+## Reviews and wishlist
+
+| ID | Requirement | Tests | Levels | Status |
+|---|---|---|---|---|
+| REQ-REV-01 | Only customers who received the product (DELIVERED or later) may review it (403) | `ReviewServiceTest#customerWhoNeverReceivedTheProductIsForbidden`, `ReviewServiceTest#receivedMeansDeliveredOrLaterNotJustPaidOrShipped`, `ReviewWishlistIntegrationTest#onlyCustomersWhoReceivedTheProductMayReview`, `ReviewApiTest#verifiedPurchaseMatrix`, `ReviewDatabaseTest#everyReviewIsAVerifiedPurchase`, `UiReviewWishlistTest#notVerifiedBuyer`, `bdd:A customer who never received the product cannot review it` | U I A B D UI | Pass |
+| REQ-REV-02 | One review per customer and product (409); owner edits/deletes; others get 404 | `ReviewServiceTest#secondReviewOfTheSameProductIsAConflict`, `ReviewServiceTest#editingSomeoneElsesReviewLooksLikeNotFound`, `ReviewWishlistIntegrationTest#ownerEditsAndDeletesOthersGet404`, `ReviewApiTest#oneReviewPerCustomer`, `ReviewApiTest#idor`, `ReviewApiTest#editAndDelete`, `ReviewDatabaseTest#constraintsExist`, `bdd:Only one review per product` | U I A B D | Pass |
+| REQ-REV-03 | Rating 1..5, title <= 100, body <= 2000 characters | `ReviewWishlistIntegrationTest#validationErrors`, `ReviewApiTest#ratingBoundaries`, `ReviewApiTest#titleBoundary`, `ReviewApiTest#bodyBoundary`, `ReviewApiTest#missingRating`, `bdd:Rating must be between 1 and 5` | I A B | Pass |
+| REQ-REV-04 | Average rounded HALF_UP to 1 decimal with 5..1 distribution; stays correct under concurrent reviews | `ReviewServiceTest#averageIsRoundedHalfUpToOneDecimal`, `ReviewServiceTest#noReviewsMeansZeroAndAllFiveDistributionKeys`, `ReviewWishlistIntegrationTest#verifiedBuyersReviewAndTheAverageIsKeptOnTheProduct`, `ReviewApiTest#averageAndDistribution`, `ReviewConcurrencyTest#simultaneousReviews`, `ReviewDatabaseTest#ratingSummaryMatchesReviewsForAllProducts`, `UiReviewWishlistTest#verifiedBuyerReviews`, `bdd:A verified buyer's review updates the product rating` | U I A B D UI | Pass |
+| REQ-REV-05 | Public reviews show a masked name, never e-mail or user id; HTML is returned as data | `ReviewServiceTest#reviewerNameIsMasked`, `ReviewWishlistIntegrationTest#publicReviewListNeverShowsEmailAddresses`, `ReviewWishlistIntegrationTest#scriptInAReviewIsStoredAsPlainText`, `ReviewApiTest#reviewerMasked`, `ReviewApiTest#scriptStoredAsText` | U I A S | Pass |
+| REQ-REV-06 | Admin hides/publishes reviews; hidden reviews leave the list and the average | `ReviewWishlistIntegrationTest#adminHidesAReviewAndItLeavesTheAverage`, `ReviewApiTest#moderation`, `ReviewServiceTest#editRecalculatesAndKeepsHiddenStatus`, `bdd:Moderation removes a hidden review from the average` | U I A B | Pass |
+| REQ-REV-07 | Sorting newest (default), highest, lowest; unknown sort -> 400 | `ReviewServiceTest#unknownSortIsRejected`, `ReviewApiTest#sorting`, `ReviewApiTest#newestFirst`, `ReviewApiTest#badSort` | U A | Pass |
+| REQ-WSH-01 | Add is idempotent (201 then 200); max 50; inactive product 404 | `WishlistServiceTest#addingTwiceIsIdempotent`, `WishlistServiceTest#fullWishlistRejectsTheNextProduct`, `WishlistServiceTest#inactiveProductCannotBeAdded`, `WishlistApiTest#idempotentAdd`, `WishlistApiTest#limit`, `WishlistApiTest#inactiveProduct`, `bdd:Wishlist add is idempotent and move-to-cart empties it` | U A B | Pass |
+| REQ-WSH-02 | Price drop since adding is shown | `WishlistServiceTest#priceDropIsShownOnlyWhenThePriceWentDown`, `WishlistApiTest#priceDrop`, `ReviewDatabaseTest#wishlistRow`, `UiReviewWishlistTest#wishlistJourney` | U A D UI | Pass |
+| REQ-WSH-03 | Move to cart is atomic: if the cart refuses (sold out) the item stays on the wishlist | `WishlistServiceTest#whenTheCartRefusesTheProductStaysOnTheWishlist`, `WishlistServiceTest#moveToCartRemovesFromWishlist`, `ReviewWishlistIntegrationTest#moveToCartMovesOrKeepsTheItemWhenOutOfStock`, `WishlistApiTest#moveToCart`, `WishlistApiTest#moveToCartSoldOut` | U I A | Pass |
+| REQ-WSH-04 | Wishlists are private and need login | `ReviewWishlistIntegrationTest#customersCannotSeeEachOthersWishlist`, `WishlistApiTest#privacy` | I A | Pass |
+
+## Storefront UI
+
+| ID | Requirement | Tests | Levels | Status |
+|---|---|---|---|---|
+| REQ-UI-01 | Customer can register, buy with a coupon, see a declined card error and pay | `UiShoppingJourneyTest#endToEndPurchase` | UI | Pass |
+| REQ-UI-02 | Protected pages ask for login and return to the page afterwards | `UiAuthTest#protectedRouteRedirect` | UI | Pass |
+| REQ-UI-03 | Delivered order shows tracking and accepts a return | `UiOrderAfterSalesTest#trackingAndReturn` | UI | Pass |
+| REQ-UI-04 | Storefront loads with products and search | `HomePageUiTest#homeLoads`, `HomePageUiTest#searchFilters` | UI | Pass |
+
+## Non-functional
+
+| ID | Requirement | Tests | Levels | Status |
+|---|---|---|---|---|
+| NFR-PERF-01 | At 50 users: read p95 < 500 ms, write p95 < 1000 ms, purchase journey p95 < 3 s, errors < 1 %, checks > 99 % | k6 `performance/tests/smoke.js` (every build), k6 `performance/tests/load.js` | P | Pass (load p95 4 ms CI, 20 ms Mac) |
+| NFR-PERF-02 | Correct under a rush: exactly STOCK orders succeed, no 5xx, stock ends at 0 | k6 `performance/tests/flash-sale.js`, `InventoryConcurrencyTest#flashSale` | P A | Pass (300 buyers / 50 units) |
+| NFR-SEC-01 | Security headers on every response; no CORS for foreign origins; no stack traces; actuator shows health only | `SecurityIntegrationTest#securityHeadersOnPublicAndErrorResponses`, `SecurityIntegrationTest#foreignWebsitesGetNoCorsPermission`, `SecurityIntegrationTest#unexpectedErrorsDoNotLeakInternals`, `SecurityIntegrationTest#onlyTheHealthEndpointOfActuatorIsReachable`, `InputAndExposureTest#securityHeaders`, `InputAndExposureTest#noCorsForForeignOrigins`, `InputAndExposureTest#cleanErrors`, `InputAndExposureTest#healthWithoutDetails` | I A S | Pass |
+| NFR-SEC-02 | Injection and malformed input never succeed and never cause 5xx | `InputAndExposureTest#sqlInjectionInSearch`, `InputAndExposureTest#sqlInjectionInLogin`, `InputAndExposureTest#oddPaths`, `InputAndExposureTest#oversizedInput`, `InputAndExposureTest#badBodies`, OWASP ZAP API scan | A S | Pass (ZAP: 0 medium/high) |
+| NFR-SEC-03 | No shipped library with a fixable critical vulnerability | OSV-Scanner gate in CI | S | Pass (0 vulnerable packages) |
+| NFR-DATA-01 | Database invariants: no negative stock, timeline matches status, rating summary matches reviews, no card data | `OrderDatabaseTest#noNegativeStock`, `LifecycleDatabaseTest#timelineMatchesStatus`, `ReviewDatabaseTest#ratingSummaryMatchesReviewsForAllProducts`, `PaymentDatabaseTest#noCardDataColumns` | D | Pass |
+
+## Coverage summary
+
+| Area | Requirements | Covered | Gaps |
+|---|---|---|---|
+| Identity and access | 7 | 7 | - |
+| Catalog | 4 | 3 | REQ-CAT-04 pagination (DEF-007) |
+| Cart | 3 | 3 | - |
+| Orders and inventory | 6 | 6 | - |
+| Pricing, coupons, payments | 9 | 9 | - |
+| Fulfilment and returns | 6 | 6 | - |
+| Reviews and wishlist | 11 | 11 | - |
+| Storefront UI | 4 | 4 | - |
+| Non-functional | 6 | 6 | - |
+| **Total** | **56** | **55 (98 %)** | **1** |

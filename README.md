@@ -1,7 +1,7 @@
 # RbcTcsWorld E-Commerce QA Automation Platform
 
 [![CI](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml)
-![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-green) ![Tests](https://img.shields.io/badge/tests-300%2B-brightgreen)
+![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-green) ![Tests](https://img.shields.io/badge/tests-493-brightgreen)
 [![Allure Report](https://img.shields.io/badge/Allure-live%20report-orange)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/)
 
 **292 automated tests** (172 backend unit/integration + 120 API, database, concurrency and BDD) covering a full
@@ -24,6 +24,7 @@ layered automation framework (unit, integration, API, BDD, UI, security).
 | 5 | Verified-purchase reviews, ratings (race-safe average), moderation, wishlist with price-drop and move-to-cart; product page + wishlist UI | Done | [docs/modules/MODULE_05_REVIEWS_WISHLIST_BN.md](docs/modules/MODULE_05_REVIEWS_WISHLIST_BN.md) |
 | - | k6 performance: smoke, load, stress, spike, soak and a flash-sale concurrency test (no overselling); SLO thresholds, HTML report, smoke + flash sale in every CI build | Done | [docs/modules/PERFORMANCE_K6_BN.md](docs/modules/PERFORMANCE_K6_BN.md) |
 | - | Security: brute-force lockout, timing-safe login, JWT hardening, security headers; JWT/access-matrix/injection/exposure tests; OWASP ZAP API scan + OSV dependency scan in CI (21 vulnerable libraries -> 0) | Done | [docs/modules/SECURITY_BN.md](docs/modules/SECURITY_BN.md) |
+| - | QA documentation: test strategy, test plan, risk register, traceability matrix (56 requirements, checked in CI), 12 real defect reports, test summary report with go/no-go | Done | [docs/qa/](docs/qa/README.md) · [Bangla guide](docs/modules/QA_DOCUMENTS_BN.md) |
 
 ## Ports and accounts (development)
 

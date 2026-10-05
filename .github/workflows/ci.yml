@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '21', cache: maven }
+      - name: Traceability matrix references only tests that exist
+        run: python3 docs/qa/check_rtm.py
       - name: mvn verify
         run: |
           set -o pipefail
