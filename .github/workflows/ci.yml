@@ -57,6 +57,20 @@ jobs:
           mvn -B -f automation/pom.xml test
           -DbaseUrl=http://localhost:8081 -DuiUrl=http://localhost:5173 -Dheadless=true
 
+      # ---------- k6 performance smoke + flash-sale invariant ----------
+      - uses: grafana/setup-k6-action@v1
+        if: always()
+      - name: k6 smoke (SLO thresholds) and flash-sale (no overselling)
+        if: always()
+        run: |
+          k6 run -q -e DURATION=30s performance/tests/smoke.js
+          k6 run -q -e BUYERS=60 -e STOCK=15 performance/tests/flash-sale.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-reports
+          path: performance/reports/
+
       - name: Show failed tests as annotations
         if: failure()
         run: |

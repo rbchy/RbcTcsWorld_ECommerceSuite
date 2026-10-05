@@ -1,0 +1,61 @@
+name: Performance (manual)
+
+# Heavy k6 tests are started by hand: Actions > Performance (manual) > Run workflow.
+# They run against a fresh backend + PostgreSQL on the GitHub runner (2 CPUs), so the absolute
+# numbers are lower than on real servers - compare runs with each other, not with production.
+on:
+  workflow_dispatch:
+    inputs:
+      test:
+        description: Which test
+        type: choice
+        options: [load, stress, spike, soak, flash-sale, smoke]
+        default: load
+      args:
+        description: Extra k6 options, e.g. "-e HOLD=10m -e BROWSERS=80" or "-e DURATION=1h"
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_DB: ecommerce, POSTGRES_USER: ecommerce, POSTGRES_PASSWORD: ecommerce }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ecommerce" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21', cache: maven }
+      - name: Build and start backend
+        run: |
+          mvn -B -f backend/pom.xml -DskipTests package
+          nohup java -jar backend/target/ecommerce-backend-1.0.0.jar > backend.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:8081/actuator/health && break; sleep 2; done
+      - uses: grafana/setup-k6-action@v1
+      - name: k6 ${{ inputs.test }}
+        # inputs go through env variables, never straight into the script (prevents shell injection)
+        env: { TEST: '${{ inputs.test }}', ARGS: '${{ inputs.args }}' }
+        run: |
+          # shellcheck disable=SC2086
+          k6 run $ARGS "performance/tests/${TEST}.js"
+      - name: Database after the test (row counts, stock never negative)
+        if: always()
+        env: { PGPASSWORD: ecommerce }
+        run: |
+          psql -h localhost -U ecommerce -d ecommerce -c "select count(*) as orders, sum(case when status='PAID' then 1 else 0 end) as paid from orders"
+          psql -h localhost -U ecommerce -d ecommerce -c "select count(*) as negative_stock_products from products where stock < 0"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-${{ inputs.test }}-report
+          path: |
+            performance/reports/
+            backend.log

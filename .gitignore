@@ -15,3 +15,6 @@ dist/
 *.docx
 # generated reports saved in the project root (e.g. exported Cucumber HTML report)
 /*.pdf
+# k6 output (generated on every run)
+performance/reports/*
+!performance/reports/.gitkeep
