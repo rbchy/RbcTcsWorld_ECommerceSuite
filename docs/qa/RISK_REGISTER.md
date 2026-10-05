@@ -23,8 +23,8 @@ test layers that mitigate the risk; "Residual" is what remains after mitigation.
 | R-15 | Known vulnerable library shipped | 3 | 3 | **9** | OSV-Scanner every push, build fails on fixable CVSS >= 9; 21 vulnerable packages reduced to 0 ([DEF-005](DEFECT_REPORTS.md#def-005)) | CI (SCA) | Medium: Spring Boot 3.5 is out of OSS support |
 | R-16 | Injection (SQL, path traversal) | 1 | 3 | **3** | Parameterised JPA queries; injection payload tests; ZAP active scan with FAIL rules | API (security), ZAP | Low |
 | R-17 | Internal details leak in errors or actuator | 2 | 2 | **4** | Global JSON error handler; tests for stack traces, actuator endpoints, headers | Integration, API, ZAP | Low |
-| R-18 | Slow pages at peak traffic | 2 | 2 | **4** | k6 load with SLO thresholds; stress and spike on demand | k6 | Medium: catalog has no pagination ([DEF-007](DEFECT_REPORTS.md#def-007)) |
-| R-19 | UI does not reflect API rules (button works but rule ignored) | 2 | 2 | **4** | 11 Selenium journeys incl. coupon, declined card, return, review, wishlist | UI | Low |
+| R-18 | Slow pages at peak traffic | 2 | 2 | **4** | k6 load with SLO thresholds; stress and spike on demand | k6 | Low: catalog paginated, response size gated in CI ([DEF-007](DEFECT_REPORTS.md#def-007)) |
+| R-19 | UI does not reflect API rules (button works but rule ignored) | 2 | 2 | **4** | 12 Selenium journeys incl. coupon, declined card, return, review, wishlist | UI | Low |
 | R-20 | Flaky automation hides real failures or blocks releases | 2 | 2 | **4** | Explicit waits only, stale-safe page objects, per-test data, failure annotations in CI ([DEF-008](DEFECT_REPORTS.md#def-008), [DEF-009](DEFECT_REPORTS.md#def-009)) | Framework design | Low |
 | R-21 | Schema change breaks existing data | 1 | 3 | **3** | Flyway migrations run in every integration test and every CI database; Hibernate `validate` | Integration, CI | Low |
 

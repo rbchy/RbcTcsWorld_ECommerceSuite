@@ -9,16 +9,16 @@
 
 ## 1. Recommendation
 
-**GO for release 1.0**, with one Medium defect accepted for the next release:
-[DEF-007](DEFECT_REPORTS.md#def-007) (catalog has no pagination). It has no functional impact at the
-current catalog size and is tracked as the only gap in the traceability matrix.
+**GO for release 1.0.** All exit criteria are met, every requirement is covered, and no defect is open.
+The last open defect, [DEF-007](DEFECT_REPORTS.md#def-007) (catalog without pagination), was fixed test-first
+before sign-off: response size -91 %, constant regardless of catalog size.
 
 ## 2. Exit criteria
 
 | # | Criterion | Target | Result | |
 |---|---|---|---|---|
-| 1 | Automated tests on CI | 100 % pass | **493 / 493** passed | ✅ |
-| 2 | Requirement coverage | >= 95 % | **55 / 56 = 98 %** (gap: REQ-CAT-04) | ✅ |
+| 1 | Automated tests on CI | 100 % pass | **517 / 517** passed, 0 skipped | ✅ |
+| 2 | Requirement coverage | >= 95 % | **56 / 56 = 100 %** | ✅ |
 | 3 | Open Critical / High defects | 0 | **0** | ✅ |
 | 4 | k6 smoke + load SLOs | all pass | all pass | ✅ |
 | 5 | k6 flash sale | orders = stock, stock 0 | 15 / 15 (CI), 50 / 50 (local, 300 buyers) | ✅ |
@@ -29,11 +29,11 @@ current catalog size and is tracked as the only gap in the traceability matrix.
 
 | Suite | Tests | Passed | Failed | Skipped | Runs against |
 |---|---|---|---|---|---|
-| Backend unit + integration | 240 | 240 | 0 | 0 | H2 (PostgreSQL mode) + Flyway |
-| Automation: API, DB, security, BDD, UI | 253 | 253 | 0 | 0 | Backend + PostgreSQL 16 + headless Chrome |
-| **Total** | **493** | **493** | **0** | **0** | |
+| Backend unit + integration | 248 | 248 | 0 | 0 | H2 (PostgreSQL mode) + Flyway |
+| Automation: API, DB, security, BDD, UI | 269 | 269 | 0 | 0 | Backend + PostgreSQL 16 + headless Chrome |
+| **Total** | **517** | **517** | **0** | **0** | |
 
-The automation total contains 43 Cucumber scenarios and 11 Selenium UI tests; the rest are API,
+The automation total contains 43 Cucumber scenarios and 12 Selenium UI tests; the rest are API,
 database and security tests. Figures come from the CI "Test totals" annotations (surefire XML).
 
 ## 4. Performance
@@ -45,6 +45,7 @@ database and security tests. Figures come from the CI "Test totals" annotations 
 | Flash sale | MacBook | 300 buyers, 50 units, same moment | 50 created, 250 rejected (409), 0 unexpected, stock 0; order p95 279 ms | all pass |
 | Flash sale | MacBook | 100 buyers, 20 units | 20 created, 80 rejected, stock 0; order p95 112 ms | all pass |
 | Smoke + flash sale | CI, every push | 2 users; 60 buyers / 15 units | 0 % failed, checks 100 % | all pass |
+| Catalog (DEF-007) | CI, every push | 10 visitors, 20 s | response 32,927 -> 2,998 bytes p95 (234 -> 20 products) | all pass |
 
 Observation: order latency grows with the number of simultaneous buyers of the **same** product
 (112 ms -> 279 ms from 100 to 300 buyers) because the row update is serialised. This is the expected
@@ -67,9 +68,9 @@ cost of correctness and is far below the 3-second target.
 |---|---|---|---|
 | Critical | 1 | 1 | 0 |
 | High | 3 | 3 | 0 |
-| Medium | 5 | 4 | 1 (DEF-007) |
+| Medium | 5 | 5 | 0 |
 | Low | 3 | 3 | 0 |
-| **Total** | **12** | **11** | **1** |
+| **Total** | **12** | **12** | **0** |
 
 8 product defects, 4 test-code defects. Every closed product defect has a regression test.
 Details: [Defect Reports](DEFECT_REPORTS.md).
@@ -78,7 +79,6 @@ Details: [Defect Reports](DEFECT_REPORTS.md).
 
 | Risk | Why accepted | Follow-up |
 |---|---|---|
-| Catalog without pagination (DEF-007) | Small catalog today; reads still fast | Release 1.1 |
 | Login lock is per instance (memory) | One backend instance | Redis when scaling out |
 | Logged-out token valid until expiry (1 h) | Short expiry | Refresh tokens / denylist |
 | Spring Boot 3.5 out of OSS support | Patched libraries pinned and monitored in CI | Migrate to Spring Boot 4 |
@@ -90,7 +90,9 @@ Details: [Defect Reports](DEFECT_REPORTS.md).
 1. **Assert state, not just status codes:** a 200 response hid that product updates were ignored (DEF-001).
 2. **Run on the CI operating system early:** a Mac-only green suite hid a Linux typing bug (DEF-008).
 3. **Fix flaky tests at the root:** stale-element handling instead of retries (DEF-009).
-4. **Performance reports find design problems:** the per-endpoint table exposed the missing pagination (DEF-007).
+4. **Performance reports find design problems:** the per-endpoint table exposed the missing pagination (DEF-007),
+   which was then fixed test-first: tests red on the unfixed code, green after the fix, before/after measured
+   in the same environment.
 5. **Verify that a "fixed" version really exists:** an advisory pointed to an unpublished Tomcat release (DEF-005).
 6. **Make CI explain itself:** failures, totals, k6, ZAP and OSV results are annotations on the run page,
    so a red build can be understood without downloading logs.

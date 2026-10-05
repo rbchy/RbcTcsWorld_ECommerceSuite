@@ -59,7 +59,7 @@ Design techniques used deliberately:
 ## 5. Test levels (the test pyramid)
 
 ```
-                 UI (Selenium, 11)            <- user journeys only
+                 UI (Selenium, 12)            <- user journeys only
             BDD (Cucumber, 43 scenarios)       <- business-readable acceptance
         API + DB + security (REST Assured, JDBC) <- most functional coverage
    Integration (Spring MockMvc + H2)              <- every endpoint, real wiring
