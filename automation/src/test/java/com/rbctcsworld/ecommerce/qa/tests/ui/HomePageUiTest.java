@@ -51,12 +51,25 @@ class HomePageUiTest {
     }
 
     @Test
-    @DisplayName("Catalog is paged: 20 products first, 'Load more' adds the next page (DEF-007)")
+    @DisplayName("Catalog is paged: 20 products first, 'Load more' adds the rest (DEF-007)")
     void loadMore() {
-        org.junit.jupiter.api.Assumptions.assumeTrue(home.catalogTotal() > 20, "needs more than 20 products");
-        assertEquals(20, home.productCount(), "first page");
+        // own data: 21 products sharing a unique name prefix, so the test never depends on the catalog size
+        String prefix = "LM" + java.util.UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        for (int i = 0; i < 21; i++) {
+            new com.rbctcsworld.ecommerce.qa.api.ProductClient().create(com.rbctcsworld.ecommerce.qa.testdata.Fixtures.adminToken(),
+                    com.rbctcsworld.ecommerce.qa.api.ProductClient.body(prefix + " lamp " + i, prefix + "-" + i, "qa",
+                            new java.math.BigDecimal("9.99"), 3)).then().statusCode(201);
+        }
+        home.search(prefix);
+        assertAll("first page",
+                () -> assertEquals(21, home.catalogTotal()),
+                () -> assertEquals(20, home.productCount()),
+                () -> assertTrue(home.canLoadMore()));
+
         home.loadMore();
-        assertEquals(Math.min(40, home.catalogTotal()), home.productCount(), "second page appended");
+        assertAll("after Load more",
+                () -> assertEquals(21, home.productCount()),
+                () -> assertFalse(home.canLoadMore(), "button disappears on the last page"));
     }
 
     @Test
