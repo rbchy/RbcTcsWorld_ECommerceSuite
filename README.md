@@ -23,6 +23,7 @@ layered automation framework (unit, integration, API, BDD, UI, security).
 | - | Storefront pages (login, cart, checkout, orders, pay / cancel / return) + Selenium Page Objects and UI journey tests, run headless in CI | Done | [docs/modules/FRONTEND_UI_TESTS_BN.md](docs/modules/FRONTEND_UI_TESTS_BN.md) |
 | 5 | Verified-purchase reviews, ratings (race-safe average), moderation, wishlist with price-drop and move-to-cart; product page + wishlist UI | Done | [docs/modules/MODULE_05_REVIEWS_WISHLIST_BN.md](docs/modules/MODULE_05_REVIEWS_WISHLIST_BN.md) |
 | - | k6 performance: smoke, load, stress, spike, soak and a flash-sale concurrency test (no overselling); SLO thresholds, HTML report, smoke + flash sale in every CI build | Done | [docs/modules/PERFORMANCE_K6_BN.md](docs/modules/PERFORMANCE_K6_BN.md) |
+| - | Security: brute-force lockout, timing-safe login, JWT hardening, security headers; JWT/access-matrix/injection/exposure tests; OWASP ZAP API scan + OSV dependency scan in CI (21 vulnerable libraries -> 0) | Done | [docs/modules/SECURITY_BN.md](docs/modules/SECURITY_BN.md) |
 
 ## Ports and accounts (development)
 
