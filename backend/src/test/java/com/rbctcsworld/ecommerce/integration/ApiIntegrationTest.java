@@ -18,6 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -117,6 +118,20 @@ class ApiIntegrationTest {
         mvc.perform(get("/api/products"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(8)));
+    }
+
+    @Test
+    void catalogIsPaginatedWithTotalsAndLinks_DEF007() throws Exception {
+        mvc.perform(get("/api/products?size=3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(header().string("X-Page", "0"))
+                .andExpect(header().string("X-Page-Size", "3"))
+                .andExpect(header().exists("X-Total-Count"))
+                .andExpect(header().string("Link", org.hamcrest.Matchers.containsString("page=1>; rel=\"next\"")));
+        mvc.perform(get("/api/products?size=101")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/products?page=-1")).andExpect(status().isBadRequest());
+        mvc.perform(get("/api/products?sort=stock")).andExpect(status().isBadRequest());
     }
 
     @Test

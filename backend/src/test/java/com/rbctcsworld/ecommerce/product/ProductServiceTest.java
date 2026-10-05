@@ -1,15 +1,24 @@
 package com.rbctcsworld.ecommerce.product;
 
+import com.rbctcsworld.ecommerce.common.exception.BusinessRuleException;
 import com.rbctcsworld.ecommerce.common.exception.ConflictException;
 import com.rbctcsworld.ecommerce.common.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -88,5 +97,46 @@ class ProductServiceTest {
 
         assertThat(existing.isActive()).isFalse();
         verify(repo).save(existing);
+    }
+
+    // ---------- DEF-007 pagination ----------
+
+    @ParameterizedTest(name = "page={0} size={1} sort={2}")
+    @CsvSource({"-1, 20, id", "0, 0, id", "0, 101, id", "0, 20, stock"})
+    void invalidPageSizeOrSortIs400(int page, int size, String sort) {
+        assertThatThrownBy(() -> service.page(null, page, size, sort)).isInstanceOf(BusinessRuleException.class);
+        verify(repo, never()).findByActiveTrue(any());
+    }
+
+    @Test
+    void requestedPageAndStableSortReachTheDatabase() {
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        Page<Product> one = new PageImpl<>(List.of(product(1L, "A")));
+        when(repo.findByActiveTrue(captor.capture())).thenReturn(one);
+
+        service.page(" ", 2, 100, "PRICE_DESC");
+
+        Pageable p = captor.getValue();
+        assertThat(p.getPageNumber()).isEqualTo(2);
+        assertThat(p.getPageSize()).isEqualTo(100);
+        assertThat(p.getSort()).containsExactly(Sort.Order.desc("price"), Sort.Order.asc("id"));
+    }
+
+    @Test
+    void searchUsesTheNameQueryAndDefaultsToIdOrder() {
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        when(repo.findByNameContainingIgnoreCaseAndActiveTrue(org.mockito.ArgumentMatchers.eq("mouse"), captor.capture()))
+                .thenReturn(Page.empty());
+
+        service.page("  mouse ", 0, 20, null);
+
+        assertThat(captor.getValue().getSort()).containsExactly(Sort.Order.asc("id"));
+    }
+
+    @Test
+    void nameSortIgnoresCaseAndEndsWithIdSoPagesAreStable() {
+        Sort sort = ProductService.sortOf("name");
+        assertThat(sort.getOrderFor("name").isIgnoreCase()).isTrue();
+        assertThat(sort.getOrderFor("id")).isNotNull();
     }
 }

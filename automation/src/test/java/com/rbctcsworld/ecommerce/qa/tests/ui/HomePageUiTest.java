@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -47,6 +48,15 @@ class HomePageUiTest {
         assertAll(
                 () -> assertTrue(home.title().toLowerCase().contains("e-commerce"), "title"),
                 () -> assertTrue(home.productCount() >= 8, "seeded products visible"));
+    }
+
+    @Test
+    @DisplayName("Catalog is paged: 20 products first, 'Load more' adds the next page (DEF-007)")
+    void loadMore() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(home.catalogTotal() > 20, "needs more than 20 products");
+        assertEquals(20, home.productCount(), "first page");
+        home.loadMore();
+        assertEquals(Math.min(40, home.catalogTotal()), home.productCount(), "second page appended");
     }
 
     @Test

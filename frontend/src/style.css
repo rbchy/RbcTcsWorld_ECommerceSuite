@@ -47,3 +47,4 @@ button.ghost { background: #fff; color: var(--accent); border: 1px solid var(--a
 textarea { padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; width: 100%; }
 td.actions { display: flex; gap: 12px; align-items: center; }
 article h2 a { color: var(--ink); text-decoration: none; } article h2 a:hover { text-decoration: underline; }
+.center { text-align: center; margin-top: 18px; }

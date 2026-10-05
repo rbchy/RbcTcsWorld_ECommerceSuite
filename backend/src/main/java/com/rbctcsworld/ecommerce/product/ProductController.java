@@ -1,6 +1,9 @@
 package com.rbctcsworld.ecommerce.product;
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * GET    /api/products?q=   public           200
+ * GET    /api/products?q=&page=0&size=20&sort=id|name|price_asc|price_desc
+ *                           public           200 (JSON array = one page) | 400 bad page/size/sort
+ *        headers: X-Total-Count, X-Total-Pages, X-Page, X-Page-Size, Link (rel="next"/"prev")
+ *        The body stayed an array, so older clients keep working (backward-compatible fix of DEF-007).
  * GET    /api/products/{id} public           200 | 404
  * POST   /api/products      ADMIN            201 | 400 | 401 | 403 | 409
  * PUT    /api/products/{id} ADMIN            200 | 400 | 401 | 403 | 404 | 409
@@ -33,8 +39,32 @@ public class ProductController {
     }
 
     @GetMapping
-    public List<Product> all(@RequestParam(required = false) String q) {
-        return service.all(q);
+    public ResponseEntity<List<Product>> all(@RequestParam(required = false) String q,
+                                             @RequestParam(defaultValue = "0") int page,
+                                             @RequestParam(defaultValue = "" + ProductService.DEFAULT_PAGE_SIZE) int size,
+                                             @RequestParam(defaultValue = "id") String sort) {
+        Page<Product> result = service.page(q, page, size, sort);
+        ResponseEntity.BodyBuilder response = ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(result.getTotalElements()))
+                .header("X-Total-Pages", String.valueOf(result.getTotalPages()))
+                .header("X-Page", String.valueOf(result.getNumber()))
+                .header("X-Page-Size", String.valueOf(result.getSize()));
+        String links = links(result);
+        if (!links.isEmpty()) response.header("Link", links);
+        return response.body(result.getContent());
+    }
+
+    /** RFC 8288 Link header, like the GitHub API: <...?page=1>; rel="next", <...?page=0>; rel="prev". */
+    private static String links(Page<?> p) {
+        StringBuilder sb = new StringBuilder();
+        if (p.hasNext()) sb.append(link(p.getNumber() + 1, "next"));
+        if (p.hasPrevious()) sb.append(sb.isEmpty() ? "" : ", ").append(link(p.getNumber() - 1, "prev"));
+        return sb.toString();
+    }
+
+    private static String link(int page, String rel) {
+        String url = ServletUriComponentsBuilder.fromCurrentRequest().replaceQueryParam("page", page).build().toUriString();
+        return "<" + url + ">; rel=\"" + rel + "\"";
     }
 
     @GetMapping("/{id}")
