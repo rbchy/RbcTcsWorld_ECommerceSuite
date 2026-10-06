@@ -138,6 +138,14 @@ jobs:
             backend.log
             frontend.log
 
+  jenkinsfile-lint:
+    name: Jenkinsfile lint (real Jenkins, declarative validator)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: .github/scripts/lint-jenkinsfile.sh
+
   docker-e2e:
     name: Whole app in Docker (compose) + smoke tests
     needs: backend-tests

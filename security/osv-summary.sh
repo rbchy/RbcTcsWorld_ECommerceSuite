@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # One annotation per vulnerable package: version, advisories, highest CVSS score and the lowest version
 # that fixes ALL of its advisories (the version to upgrade to).
-# Exit code 1 when a package with CVSS >= FAIL_AT (default 9.0 = critical) has a fix available:
-# the build stops for critical issues we CAN fix, and only reports the rest.
+# Exit code 1 for any package with CVSS >= FAIL_AT (default 9.0 = critical) - with or without a fix.
+# The only way past the gate is to upgrade, or to accept the risk explicitly in osv-scanner.toml
+# (reason + guard test + expiry date). Lower severities are reported, not blocking.
 f="${1:-osv-results.json}"
 [ -s "$f" ] || { echo "::notice title=OSV-Scanner::no results file (scan failed or nothing to scan)"; exit 0; }
 jq -r '
@@ -24,13 +25,22 @@ jq -r '
       | "::\(if .max >= 9 then "error" elif .max >= 7 then "warning" else "notice" end) title=OSV \(.pkg)::max CVSS \(.max) | fixed in \(.fix) | \(.src) | \(.ids | join(", "))")
 ' "$f"
 
+# Accepted exceptions (osv-scanner.toml) are listed, so they stay visible on every run
+for t in $(find . -name osv-scanner.toml -not -path "*/node_modules/*" 2>/dev/null); do
+  grep -E '^id|^ignoreUntil' "$t" | paste - - | sed -E 's/id = "([^"]+)".*ignoreUntil = ([0-9-]+)/\1 until \2/' \
+    | sed "s|^|::notice title=Accepted risk ($t)::|"
+done
+
 FAIL_AT="${FAIL_AT:-9}"
 blocking=$(jq --argjson t "$FAIL_AT" '
   def vkey: split(".") | map(capture("^(?<n>[0-9]+)").n // "0" | tonumber);
-  [ .results[]?.packages[]?
+  def fixes($cur): .events as $e
+    | [ range(0; $e | length) | select($e[.].introduced != null) | {i: $e[.].introduced, f: ($e[. + 1].fixed // null)} ]
+    | map(select(.f != null and (.i | vkey) <= ($cur | vkey) and ($cur | vkey) < (.f | vkey)) | .f);
+  [ .results[]?.packages[]? | .package.name as $name | .package.version as $cur
     | select(([ .groups[]?.max_severity | select(. != null and . != "") | tonumber ] | max // 0) >= $t)
-    | select([ .vulnerabilities[]?.affected[]?.ranges[]?.events[]?.fixed | select(. != null) ] | length > 0) ] | length' "$f")
+    ] | length' "$f")
 if [ "${blocking:-0}" -gt 0 ]; then
-  echo "::error title=OSV-Scanner::$blocking package(s) with CVSS >= $FAIL_AT have a fixed version - upgrade them (see annotations above)"
+  echo "::error title=OSV-Scanner::$blocking package(s) with CVSS >= $FAIL_AT - upgrade (see 'fixed in'), or if not exploitable here add a documented exception with an expiry date to osv-scanner.toml"
   exit 1
 fi

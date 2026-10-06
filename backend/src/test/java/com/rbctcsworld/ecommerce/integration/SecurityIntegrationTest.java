@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -32,6 +33,7 @@ class SecurityIntegrationTest {
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
+    @Autowired org.springframework.context.ApplicationContext context;
 
     private static String email() {
         return "sec-" + UUID.randomUUID() + "@test.com";
@@ -144,5 +146,24 @@ class SecurityIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.paths['/api/orders']").exists())
                 .andExpect(jsonPath("$.paths['/api/auth/login']").exists());
+    }
+
+    /**
+     * Guard for the accepted risk in backend/osv-scanner.toml: CVE-2026-47884 (spring-webmvc, CVSS 9.8)
+     * is exploitable only through XsltView rendering. This API renders no views at all; if anyone adds
+     * an XSLT view (or any view resolver that renders templates), this test fails and the exception must be revisited.
+     */
+    @Test
+    void noXsltViewRenderingIsConfigured_CVE_2026_47884() {
+        assertThat(context.getBeanNamesForType(org.springframework.web.servlet.view.xslt.XsltViewResolver.class)).isEmpty();
+        assertThat(context.getBeanNamesForType(org.springframework.web.servlet.view.xslt.XsltView.class)).isEmpty();
+        assertThat(context.getBeansWithAnnotation(org.springframework.stereotype.Controller.class).values().stream()
+                .filter(b -> org.springframework.aop.support.AopUtils.getTargetClass(b).getPackageName().startsWith("com.rbctcsworld"))
+                .toList())
+                .as("every controller of ours must be a @RestController (JSON only, no view rendering)")
+                .isNotEmpty()
+                .allSatisfy(bean -> assertThat(org.springframework.core.annotation.AnnotationUtils.findAnnotation(
+                        org.springframework.aop.support.AopUtils.getTargetClass(bean),
+                        org.springframework.web.bind.annotation.RestController.class)).isNotNull());
     }
 }

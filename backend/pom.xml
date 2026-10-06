@@ -9,9 +9,9 @@
 <postgresql.version>42.7.13</postgresql.version>
 <log4j2.version>2.25.5</log4j2.version>
 <commons-lang3.version>3.18.0</commons-lang3.version>
-<!-- coverage gate (set just below the measured value, raised as tests are added - it may never go down) -->
-<jacoco.minimum.line>0.00</jacoco.minimum.line>
-<jacoco.minimum.branch>0.00</jacoco.minimum.branch>
+<!-- coverage gate: measured 96.3 % lines / 78.8 % branches (Oct 2026); set just below, raise it as tests are added, never lower it -->
+<jacoco.minimum.line>0.95</jacoco.minimum.line>
+<jacoco.minimum.branch>0.77</jacoco.minimum.branch>
 </properties>
 <dependencies>
 <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency><dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency><dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-jpa</artifactId></dependency><dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency><dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency>

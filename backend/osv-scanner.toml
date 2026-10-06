@@ -1,0 +1,10 @@
+# Accepted vulnerability exceptions for OSV-Scanner. Every entry needs: the advisory, WHY it is not
+# exploitable here, the test that guards that reason, and an expiry date (the finding comes back then).
+
+[[IgnoredVulns]]
+id = "GHSA-pc63-qcmh-9cmg"   # CVE-2026-47884, spring-webmvc 6.2.0-6.2.19, CVSS 9.8, no fix on the 6.2 line yet
+ignoreUntil = 2026-11-05
+reason = """Exploitable only through XsltView view rendering with an '/**' mapping. This backend is a pure JSON API:
+all controllers are @RestController, there is no ViewResolver, no XsltView and no template engine.
+Guarded by SecurityIntegrationTest#noXsltViewRenderingIsConfigured_CVE_2026_47884, which fails the build if one is added.
+Review on expiry: upgrade when a 6.2.x fix is published, or plan the move to Spring Framework 7 / Spring Boot 4."""
