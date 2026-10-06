@@ -18,21 +18,23 @@ catalog the endpoint p95 dropped from 22 ms to 9 ms (-59 %).
 
 | # | Criterion | Target | Result | |
 |---|---|---|---|---|
-| 1 | Automated tests on CI | 100 % pass | **517 / 517** passed, 0 skipped | ✅ |
-| 2 | Requirement coverage | >= 95 % | **56 / 56 = 100 %** | ✅ |
+| 1 | Automated tests on CI | 100 % pass | **518 / 518** passed, 0 skipped (+44 smoke against Docker) | ✅ |
+| 2 | Requirement coverage | >= 95 % | **59 / 59 = 100 %** | ✅ |
 | 3 | Open Critical / High defects | 0 | **0** | ✅ |
 | 4 | k6 smoke + load SLOs | all pass | all pass | ✅ |
 | 5 | k6 flash sale | orders = stock, stock 0 | 15 / 15 (CI), 50 / 50 (local, 300 buyers) | ✅ |
 | 6 | OWASP ZAP | 0 Medium / High | **0** (Low only, informational) | ✅ |
-| 7 | OSV-Scanner | 0 fixable CVSS >= 9 | **0 vulnerable packages** (was 21) | ✅ |
+| 7 | OSV-Scanner | 0 unaccepted CVSS >= 9 | **0 open** (was 21); 1 accepted, guarded, expires 2026-11-05 | ✅ |
+| 8 | Code coverage (JaCoCo) | >= 95 % lines, >= 77 % branches | **96.3 % lines, 78.8 % branches** | ✅ |
 
 ## 3. Test execution
 
 | Suite | Tests | Passed | Failed | Skipped | Runs against |
 |---|---|---|---|---|---|
-| Backend unit + integration | 248 | 248 | 0 | 0 | H2 (PostgreSQL mode) + Flyway |
+| Backend unit + integration | 249 | 249 | 0 | 0 | H2 (PostgreSQL mode) + Flyway |
 | Automation: API, DB, security, BDD, UI | 269 | 269 | 0 | 0 | Backend + PostgreSQL 16 + headless Chrome |
-| **Total** | **517** | **517** | **0** | **0** | |
+| **Total** | **518** | **518** | **0** | **0** | |
+| Smoke against the Docker images | 44 | 44 | 0 | 0 | `docker compose --profile app` (postgres + backend + nginx storefront) |
 
 The automation total contains 43 Cucumber scenarios and 12 Selenium UI tests; the rest are API,
 database and security tests. Figures come from the CI "Test totals" annotations (surefire XML).
@@ -84,6 +86,7 @@ Details: [Defect Reports](DEFECT_REPORTS.md).
 | Login lock is per instance (memory) | One backend instance | Redis when scaling out |
 | Logged-out token valid until expiry (1 h) | Short expiry | Refresh tokens / denylist |
 | Spring Boot 3.5 out of OSS support | Patched libraries pinned and monitored in CI | Migrate to Spring Boot 4 |
+| CVE-2026-47884 in spring-webmvc 6.2.19 (CVSS 9.8, no 6.2.x fix) | Exploitable only through XsltView; this API renders no views. Guard test fails the build if one is added | Exception expires 2026-11-05: upgrade or re-assess |
 | Mock payment gateway | No real money in this release | Provider sandbox contract tests |
 | Registration reveals that an e-mail exists | Usability; common e-commerce trade-off | Re-evaluate with product owner |
 

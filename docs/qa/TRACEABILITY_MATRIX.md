@@ -106,7 +106,10 @@ Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured
 | NFR-PERF-02 | Correct under a rush: exactly STOCK orders succeed, no 5xx, stock ends at 0 | k6 `performance/tests/flash-sale.js`, `InventoryConcurrencyTest#flashSale` | P A | Pass (300 buyers / 50 units) |
 | NFR-SEC-01 | Security headers on every response; no CORS for foreign origins; no stack traces; actuator shows health only | `SecurityIntegrationTest#securityHeadersOnPublicAndErrorResponses`, `SecurityIntegrationTest#foreignWebsitesGetNoCorsPermission`, `SecurityIntegrationTest#unexpectedErrorsDoNotLeakInternals`, `SecurityIntegrationTest#onlyTheHealthEndpointOfActuatorIsReachable`, `InputAndExposureTest#securityHeaders`, `InputAndExposureTest#noCorsForForeignOrigins`, `InputAndExposureTest#cleanErrors`, `InputAndExposureTest#healthWithoutDetails` | I A S | Pass |
 | NFR-SEC-02 | Injection and malformed input never succeed and never cause 5xx | `InputAndExposureTest#sqlInjectionInSearch`, `InputAndExposureTest#sqlInjectionInLogin`, `InputAndExposureTest#oddPaths`, `InputAndExposureTest#oversizedInput`, `InputAndExposureTest#badBodies`, OWASP ZAP API scan | A S | Pass (ZAP: 0 medium/high) |
-| NFR-SEC-03 | No shipped library with a fixable critical vulnerability | OSV-Scanner gate in CI | S | Pass (0 vulnerable packages) |
+| NFR-SEC-03 | No shipped library with an unaccepted critical vulnerability; every accepted one has a reason, a guard test and an expiry | OSV-Scanner gate in CI, `SecurityIntegrationTest#noXsltViewRenderingIsConfigured_CVE_2026_47884` | I S | Pass (0 open; 1 accepted until 2026-11-05) |
+| NFR-OPS-01 | The whole application starts with one command; containers become healthy, the storefront proxies the API, sends security headers, runs the backend as non-root | CI job "Whole app in Docker" (44 smoke tests against the containers) | S | Pass |
+| NFR-OPS-02 | Code coverage never drops below the gate (lines >= 95 %, branches >= 77 %) | JaCoCo `check` in `mvn verify` | U I | Pass (96.3 % / 78.8 %) |
+| NFR-OPS-03 | The Jenkins pipeline is valid and has the same gates as GitHub Actions | CI job "Jenkinsfile lint" (Jenkins declarative validator) | CI | Pass |
 | NFR-DATA-01 | Database invariants: no negative stock, timeline matches status, rating summary matches reviews, no card data | `OrderDatabaseTest#noNegativeStock`, `LifecycleDatabaseTest#timelineMatchesStatus`, `ReviewDatabaseTest#ratingSummaryMatchesReviewsForAllProducts`, `PaymentDatabaseTest#noCardDataColumns` | D | Pass |
 
 ## Coverage summary
@@ -121,5 +124,5 @@ Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured
 | Fulfilment and returns | 6 | 6 | - |
 | Reviews and wishlist | 11 | 11 | - |
 | Storefront UI | 4 | 4 | - |
-| Non-functional | 6 | 6 | - |
-| **Total** | **56** | **56 (100 %)** | **0** |
+| Non-functional | 9 | 9 | - |
+| **Total** | **59** | **59 (100 %)** | **0** |

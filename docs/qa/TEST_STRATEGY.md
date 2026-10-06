@@ -121,7 +121,7 @@ Ports: backend 8081 (8080 is kept free for Jenkins), frontend 5173.
 
 ## 9. Quality gates (Definition of Done for a change)
 
-A push to `main` is green only if all of these pass (`.github/workflows/ci.yml`):
+A push to `main` is green only if all of these pass (`.github/workflows/ci.yml`; the `Jenkinsfile` runs the same gates):
 
 | # | Gate | Fails when |
 |---|---|---|
@@ -130,7 +130,11 @@ A push to `main` is green only if all of these pass (`.github/workflows/ci.yml`)
 | 3 | k6 smoke | read p95 >= 500 ms, write p95 >= 1000 ms, errors >= 1 %, checks < 99 % |
 | 4 | k6 flash sale | orders created != stock, any 5xx, stock ends != 0 |
 | 5 | OWASP ZAP API scan | a FAIL rule fires (injection, XSS, path traversal, stack traces, missing security headers) |
-| 6 | OSV-Scanner | a dependency with CVSS >= 9.0 has a fixed version available |
+| 6 | OSV-Scanner | any dependency with CVSS >= 9.0 that is not accepted in `osv-scanner.toml` (reason + guard test + expiry) |
+| 7 | JaCoCo coverage | line coverage < 95 % or branch coverage < 77 % (measured 96.3 % / 78.8 %) |
+| 8 | Traceability | the RTM references a test that does not exist (`check_rtm.py`) |
+| 9 | Docker | images do not build, a container is not healthy, or the smoke tests fail against the containers |
+| 10 | Jenkinsfile | the declarative validator of a real Jenkins rejects the pipeline |
 
 Reports produced on every run: Allure (published), JUnit XML, Cucumber HTML, k6 HTML/JSON,
 ZAP HTML/JSON, OSV JSON.

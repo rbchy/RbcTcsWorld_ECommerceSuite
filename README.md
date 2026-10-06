@@ -1,11 +1,11 @@
 # RbcTcsWorld E-Commerce QA Automation Platform
 
 [![CI](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml)
-![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-green) ![Tests](https://img.shields.io/badge/tests-517-brightgreen)
+![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-green) ![Tests](https://img.shields.io/badge/tests-518-brightgreen) [![Coverage](https://img.shields.io/badge/coverage-96%25%20lines-brightgreen)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/)
 [![Allure Report](https://img.shields.io/badge/Allure-live%20report-orange)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/)
 
-**292 automated tests** (172 backend unit/integration + 120 API, database, concurrency and BDD) covering a full
-register-to-refund journey.
+**518 automated tests** (249 backend unit/integration + 269 API, database, security, BDD and UI), k6 performance
+gates, OWASP ZAP and dependency scans, 96 % line coverage - all on every push, in GitHub Actions and Jenkins.
 
 An Amazon-inspired (not a copy) e-commerce platform built QA-first: a Spring Boot backend plus a
 layered automation framework (unit, integration, API, BDD, UI, security).
@@ -25,6 +25,7 @@ layered automation framework (unit, integration, API, BDD, UI, security).
 | - | k6 performance: smoke, load, stress, spike, soak and a flash-sale concurrency test (no overselling); SLO thresholds, HTML report, smoke + flash sale in every CI build | Done | [docs/modules/PERFORMANCE_K6_BN.md](docs/modules/PERFORMANCE_K6_BN.md) |
 | - | Security: brute-force lockout, timing-safe login, JWT hardening, security headers; JWT/access-matrix/injection/exposure tests; OWASP ZAP API scan + OSV dependency scan in CI (21 vulnerable libraries -> 0) | Done | [docs/modules/SECURITY_BN.md](docs/modules/SECURITY_BN.md) |
 | - | QA documentation: test strategy, test plan, risk register, traceability matrix (56 requirements, checked in CI), 12 real defect reports, test summary report with go/no-go | Done | [docs/qa/](docs/qa/README.md) · [Bangla guide](docs/modules/QA_DOCUMENTS_BN.md) |
+| - | CI/CD: whole app in Docker (one command), JaCoCo coverage gate, full Jenkinsfile validated by a real Jenkins, Docker smoke job, critical-CVE gate with expiring exceptions | Done | [docs/modules/CICD_BN.md](docs/modules/CICD_BN.md) |
 
 ## Ports and accounts (development)
 
@@ -39,8 +40,17 @@ layered automation framework (unit, integration, API, BDD, UI, security).
 
 ## Run locally
 
+**The whole application with one command** (PostgreSQL + backend + storefront in containers):
+
 ```bash
-docker compose up -d                              # PostgreSQL
+docker compose --profile app up -d --build        # storefront http://localhost:5173, API http://localhost:8081
+docker compose --profile app down                 # stop (add -v to delete the database)
+```
+
+**Development** (backend from Eclipse / Maven, live-reloading UI):
+
+```bash
+docker compose up -d                              # PostgreSQL only
 cd backend && mvn spring-boot:run                 # API on 8081, Flyway creates tables + demo products
 cd frontend && npm install && npm run dev         # UI on 5173
 ```
@@ -79,6 +89,8 @@ After pulling new modules: right-click project → Maven → Update Project (Alt
 - Backend: Spring Boot 3.5, Java 21, PostgreSQL, Flyway, Spring Security + JWT (roles CUSTOMER / ADMIN).
 - Automation: JUnit 5, REST Assured (API clients), JDBC (read-only DB validation), Selenium (Page Objects), Cucumber + PicoContainer.
 - Frontend: React + Vite.
-- CI: GitHub Actions (backend tests, then API automation against a live backend + PostgreSQL), Jenkinsfile.
+- Containers: multi-stage Dockerfiles (backend on JRE 21 as a non-root user, storefront on nginx with the `/api` reverse proxy), compose start order by health checks.
+- CI/CD: GitHub Actions and an equivalent Jenkinsfile (validated by a real Jenkins in CI). Gates: tests, JaCoCo coverage (>= 95 % lines, >= 77 % branches), traceability check, Docker smoke, k6 thresholds, OWASP ZAP, OSV-Scanner.
+- Coverage report: https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/
 
 No automation suite can guarantee finding every defect; the goal is risk-based, layered coverage.
