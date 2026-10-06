@@ -21,3 +21,5 @@ performance/reports/*
 # OWASP ZAP output (generated in CI)
 security/zap/zap-report.*
 security/zap/openapi.json
+# Allure command-line tool downloaded by allure-maven (allure:serve / allure:report)
+automation/.allure/
