@@ -25,6 +25,9 @@ jobs:
       - name: Test totals
         if: always()
         run: .github/scripts/test-totals.sh backend backend/target/surefire-reports
+      - name: Code coverage (JaCoCo)
+        if: always()
+        run: .github/scripts/coverage-summary.sh backend/target/site/jacoco/jacoco.csv
       - name: Show failed tests and build errors as annotations
         if: failure()
         run: |
@@ -33,6 +36,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: backend-test-reports, path: backend/target/surefire-reports }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: backend-coverage, path: backend/target/site/jacoco }
 
   api-automation:
     name: API + DB + BDD + Selenium UI tests (PostgreSQL)
@@ -114,6 +120,10 @@ jobs:
         with:
           name: allure-report
           path: automation/target/allure-report
+      - name: Add the JaCoCo coverage report to the published site (/coverage/)
+        if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/download-artifact@v4
+        with: { name: backend-coverage, path: automation/target/allure-report/coverage }
       - name: Package report for GitHub Pages
         if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
@@ -127,6 +137,52 @@ jobs:
             automation/target/cucumber-report.html
             backend.log
             frontend.log
+
+  docker-e2e:
+    name: Whole app in Docker (compose) + smoke tests
+    needs: backend-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21', cache: maven }
+      - name: docker compose --profile app up (build images, wait until every container is healthy)
+        run: |
+          docker compose --profile app up -d --build --wait --wait-timeout 300
+          docker compose --profile app ps
+          docker image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep rbctcsworld \
+            | sed 's/^/::notice title=Docker image::/'
+      - name: Containers answer through the storefront's nginx
+        run: |
+          set -e
+          curl -fsS http://localhost:5173/healthz
+          curl -fsS http://localhost:5173/ | grep -q '<div id="root">'
+          # API through the nginx reverse proxy (same origin as the browser uses)
+          curl -fsS "http://localhost:5173/api/products?size=1" -D - -o /dev/null | grep -i '^x-total-count'
+          # storefront security headers; no nginx version leaked
+          h=$(curl -fsSI http://localhost:5173/)
+          echo "$h" | grep -qi '^x-frame-options: DENY'
+          echo "$h" | grep -qi '^content-security-policy:'
+          ! echo "$h" | grep -qiE '^server: nginx/[0-9]'
+          # backend container does not run as root
+          test "$(docker compose exec -T backend id -u)" != "0"
+          echo "::notice title=Docker::storefront, API proxy, security headers and non-root user verified"
+      - name: Smoke tests (API, BDD, UI) against the containers
+        run: >-
+          mvn -B -f automation/pom.xml test -Dgroups=smoke
+          -DbaseUrl=http://localhost:8081 -DuiUrl=http://localhost:5173 -Dheadless=true
+      - name: Test totals
+        if: always()
+        run: .github/scripts/test-totals.sh docker-smoke automation/target/surefire-reports
+      - name: Failed tests and container logs
+        if: failure()
+        run: |
+          .github/scripts/annotate-failures.sh automation/target/surefire-reports
+          docker compose --profile app logs --no-color --tail=80
+      - name: Stop and remove containers and the database volume
+        if: always()
+        run: docker compose --profile app down -v
 
   security-scan:
     name: Security scan (OWASP ZAP API scan + OSV dependency scan)
