@@ -166,4 +166,22 @@ class SecurityIntegrationTest {
                         org.springframework.aop.support.AopUtils.getTargetClass(bean),
                         org.springframework.web.bind.annotation.RestController.class)).isNotNull());
     }
+
+    // GHSA-j9f9-w8pj-32f8 (spring-webmvc 6.2.19, CVSS 9.8, no 6.2.x fix): Server-Sent Events. Exploitable only when the
+    // application streams SSE (WebMvc.fn ServerResponse.sse(...) / SseEmitter / view fragments over SSE) with
+    // attacker-controlled text. Accepted in osv-scanner.toml as long as this test proves we stream no SSE at all.
+    @Test
+    void noServerSentEventsOrFunctionalEndpoints_GHSA_j9f9_w8pj_32f8() {
+        assertThat(context.getBeanNamesForType(org.springframework.web.servlet.function.RouterFunction.class))
+                .as("no WebMvc.fn endpoints (ServerResponse.sse)").isEmpty();
+        var mapping = context.getBean("requestMappingHandlerMapping",
+                org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping.class);
+        assertThat(mapping.getHandlerMethods().values())
+                .filteredOn(h -> h.getBeanType().getPackageName().startsWith("com.rbctcsworld"))
+                .as("our endpoints").isNotEmpty()
+                .allSatisfy(h -> assertThat(h.getReturnType().getGenericParameterType().getTypeName())
+                        .as("%s must not stream SSE or render view fragments", h)
+                        .doesNotContain("Emitter").doesNotContain("FragmentsRendering").doesNotContain("ServerSentEvent")
+                        .doesNotContain("ModelAndView").doesNotContain("Flux"));
+    }
 }

@@ -31,6 +31,12 @@ for t in $(find . -name osv-scanner.toml -not -path "*/node_modules/*" 2>/dev/nu
     | sed "s|^|::notice title=Accepted risk ($t)::|"
 done
 
+# Critical advisories: their CVE id and title, so the triage can start from the run page
+jq -r '.results[]?.packages[]? | .package.name as $n | .vulnerabilities as $v | .groups[]?
+  | select(((.max_severity // "") | if . == "" then 0 else tonumber end) >= 9) | .ids[0] as $id
+  | ([$v[]? | select(.id == $id)][0]) as $x
+  | "::notice title=Advisory \($id)::\($n) | \([$x.aliases[]?] | join(", ")) | \($x.summary // "no summary")"' "$f"
+
 FAIL_AT="${FAIL_AT:-9}"
 blocking=$(jq --argjson t "$FAIL_AT" '
   def vkey: split(".") | map(capture("^(?<n>[0-9]+)").n // "0" | tonumber);
