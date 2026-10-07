@@ -26,7 +26,7 @@ catalog the endpoint p95 dropped from 22 ms to 9 ms (-59 %).
 | 6 | OWASP ZAP | 0 Medium / High | **0** (Low only, informational) | ✅ |
 | 7 | OSV-Scanner | 0 unaccepted CVSS >= 9 | **0 open** (was 21); 2 accepted, guarded, expire 2026-11-05 | ✅ |
 | 8 | Code coverage (JaCoCo) | >= 96 % lines, >= 85 % branches | **96.9 % lines, 86.6 % branches** | ✅ |
-| 9 | Mutation score (PIT, business logic) | >= 84 % | **84.6 %** (was 65.5 %); test strength 97 % | ✅ |
+| 9 | Mutation score (PIT, business logic) | >= 84 % | **84.9 %** (was 65.5 %); test strength 97.5 % | ✅ |
 
 ## 3. Test execution
 
@@ -103,6 +103,6 @@ Details: [Defect Reports](DEFECT_REPORTS.md).
    in the same environment.
 5. **Verify that a "fixed" version really exists:** an advisory pointed to an unpublished Tomcat release (DEF-005).
 6. **Test the tests:** 96 % line coverage hid a test that could not fail (DEF-013). Mutation testing raised the
-   score from 65.5 % to 84.6 % with 30 targeted tests, and branch coverage from 78.8 % to 86.6 % as a side effect.
+   score from 65.5 % to 84.9 % with 30 targeted tests, and branch coverage from 78.8 % to 86.6 % as a side effect.
 7. **Make CI explain itself:** failures, totals, k6, ZAP and OSV results are annotations on the run page,
    so a red build can be understood without downloading logs.

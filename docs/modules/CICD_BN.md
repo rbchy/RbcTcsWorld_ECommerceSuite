@@ -37,7 +37,7 @@ docker compose --profile app down              # বন্ধ (-v দিলে d
 - **অনলাইন রিপোর্ট:** https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/
 - **সবচেয়ে কম coverage কোথায়:** run-এর পেজে "Least covered packages" নামে দেখায়, যেমন `exception` 85% আর `admin` 88%। পরের টেস্ট কোথায় লিখতে হবে, এটা সেটা দেখিয়ে দেয়।
 
-**Mutation testing (PIT):** টেস্ট আসলে ভুল ধরে কি না, সেটা মাপে। দেখুন [MUTATION_BN.md](MUTATION_BN.md)। Score 65.5% থেকে বেড়ে 84.6% হয়েছে, gate 84%।
+**Mutation testing (PIT):** টেস্ট আসলে ভুল ধরে কি না, সেটা মাপে। দেখুন [MUTATION_BN.md](MUTATION_BN.md)। Score 65.5% থেকে বেড়ে 84.9% হয়েছে, gate 84%।
 
 **Interview-এর জন্য জরুরি:** 96% coverage মানে কোডে 96% বাগ নেই, তা **নয়**। এর মানে শুধু কোডের 96% লাইন অন্তত একবার চলেছে। Coverage দেখায় কোথায় টেস্ট **নেই**। কিন্তু টেস্ট কতটা ভালো, সেটা বোঝায় assertion-এর মান আর mutation testing।
 

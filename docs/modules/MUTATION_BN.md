@@ -33,8 +33,8 @@ open backend/target/pit-reports/index.html
 
 | মাপ | প্রথম run | টেস্ট যোগ করার পর |
 |---|---|---|
-| Mutation score | **65.5%** (৩৭১টার মধ্যে ২৪৩টা killed) | **84.6%** |
-| Test strength | 82.9% | **97%** |
+| Mutation score | **65.5%** (৩৭১টার মধ্যে ২৪৩টা killed) | **84.9%** |
+| Test strength | 82.9% | **97.5%** |
 | Survived mutant | ৫০টা | **৮টা** (সবগুলো এক এক করে পর্যালোচনা করা) |
 | Backend টেস্ট | ২৪৯টা | **২৭৯টা** |
 | Branch coverage (পার্শ্বফল) | 78.8% | **86.6%** |
