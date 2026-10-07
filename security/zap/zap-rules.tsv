@@ -26,3 +26,4 @@
 10035	IGNORE	Strict-Transport-Security: TLS is terminated by the load balancer in production
 10049	IGNORE	Storable and Cacheable Content: informational
 10104	IGNORE	User Agent Fuzzer: informational
+40026	IGNORE	DOM Based XSS: needs a real browser inside ZAP (hangs on Apple Silicon Docker); the API returns JSON, there is no DOM to attack
