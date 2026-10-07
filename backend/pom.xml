@@ -10,8 +10,8 @@
 <jackson-2-bom.version>2.21.7</jackson-2-bom.version>
 <postgresql.version>42.7.14</postgresql.version>
 <!-- coverage gate: measured 96.3 % lines / 78.8 % branches (Oct 2026); set just below, raise it as tests are added, never lower it -->
-<jacoco.minimum.line>0.96</jacoco.minimum.line>
-<jacoco.minimum.branch>0.85</jacoco.minimum.branch>
+<jacoco.minimum.line>0.97</jacoco.minimum.line>
+<jacoco.minimum.branch>0.88</jacoco.minimum.branch>
 <!-- PIT mutation testing (profile "mutation"): minimum mutation score in %, ratchet only upwards -->
 <pitest.version>1.30.0</pitest.version>
 <pitest.mutationThreshold>84</pitest.mutationThreshold>

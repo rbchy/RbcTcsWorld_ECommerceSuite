@@ -30,8 +30,8 @@ docker compose --profile app down              # বন্ধ (-v দিলে d
 
 ## ২. JaCoCo: code coverage
 - **কী:** `mvn verify` চালালে টেস্টের সময় একটা agent নজর রাখে, কোডের কোন লাইন আর কোন শাখা (if/else) আসলে চলেছে। শেষে HTML, XML আর CSV রিপোর্ট তৈরি হয়।
-- **মাপা ফলাফল:** **লাইন 96.9%**, **শাখা (branch) 86.6%**। Mutation testing-এর টেস্ট যোগ হওয়ার আগে ছিল 96.3% আর 78.8%।
-- **Gate:** লাইন ≥ 96% আর শাখা ≥ 85%। মাপা মানের ঠিক নিচে রাখা হয়েছে। আগে ছিল 95% আর 77%।
+- **মাপা ফলাফল:** **লাইন 97.5%**, **শাখা (branch) 88.3%** (Spring Boot 4-এ ওঠার পর)। Mutation testing-এর টেস্ট যোগ হওয়ার আগে ছিল 96.3% আর 78.8%।
+- **Gate:** লাইন ≥ 97% আর শাখা ≥ 88%। মাপা মানের ঠিক নিচে রাখা হয়েছে। আগে ছিল 95% আর 77%।
   - **নিয়ম:** নতুন টেস্ট যোগ হলে gate বাড়ানো যাবে, কিন্তু কখনো কমানো যাবে না (ratchet)।
   - coverage এর নিচে নামলে `mvn verify` fail করে, Mac-এ চালালেও।
 - **অনলাইন রিপোর্ট:** https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/
@@ -102,6 +102,8 @@ docker compose --profile app down              # বন্ধ (-v দিলে d
 - **সিদ্ধান্ত:** একই পদ্ধতিতে লিখিতভাবে মেনে নেওয়া হয়েছে।
 - **নতুন guard test:** `SecurityIntegrationTest#noServerSentEventsOrFunctionalEndpoints_GHSA_j9f9_w8pj_32f8`। কেউ SSE বা WebMvc.fn endpoint যোগ করলে build fail করবে।
 - **আরেকটা উন্নতি:** এখন run-এর পেজে প্রতিটা critical advisory-র CVE id আর শিরোনামও দেখায়।
+
+**শেষ ফল (৭ অক্টোবর):** Spring Boot 4.1-এ upgrade করায় দুটো CVE-ই আসলে ঠিক হয়ে গেছে (Spring Framework 7.0.9)। `osv-scanner.toml`-এ এখন কোনো exception নেই। বিস্তারিত দেখুন [SPRING_BOOT_4_BN.md](SPRING_BOOT_4_BN.md)।
 
 **Interview-এ:**
 > "একটা CVSS 9.8 CVE এসেছিল যার কোনো fix ছিল না। আমি অন্ধভাবে suppress করিনি, আবার আতঙ্কিতও হইনি। কোথায় দুর্বলতাটা কাজ করে বিশ্লেষণ করে দেখলাম আমাদের app-এ সেটা ব্যবহারযোগ্য নয়। তারপর কারণ, guard test আর মেয়াদসহ ঝুঁকিটা লিখিতভাবে মেনে নিয়েছি। Guard test নিশ্চিত করে যে সেই ভিত্তি কখনো চুপচাপ বদলাতে পারবে না।"

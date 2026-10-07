@@ -24,8 +24,8 @@ def pom_property(name, default):
         return default
 
 
-GATE_LINE = 100 * pom_property("jacoco.minimum.line", 0.96)
-GATE_BRANCH = 100 * pom_property("jacoco.minimum.branch", 0.85)
+GATE_LINE = 100 * pom_property("jacoco.minimum.line", 0.97)
+GATE_BRANCH = 100 * pom_property("jacoco.minimum.branch", 0.88)
 GATE_MUTATION = pom_property("pitest.mutationThreshold", 0)
 
 

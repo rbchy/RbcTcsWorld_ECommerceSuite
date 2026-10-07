@@ -23,7 +23,7 @@ and a wishlist.
 
 | Layer | Technology |
 |---|---|
-| Backend | Java 21, Spring Boot 3.5.16, Spring Security (JWT), Spring Data JPA, Flyway (V1-V7) |
+| Backend | Java 21, Spring Boot 4.1.1 (Spring 7, Jackson 3, Tomcat 11), Spring Security (JWT), Spring Data JPA, Flyway (V1-V7) |
 | Database | PostgreSQL 16 (H2 in PostgreSQL mode for integration tests) |
 | Frontend | React 18 + Vite, every testable element exposes a `data-testid` |
 | Delivery | GitHub Actions CI, Allure report on GitHub Pages |
@@ -131,7 +131,7 @@ A push to `main` is green only if all of these pass (`.github/workflows/ci.yml`;
 | 4 | k6 flash sale | orders created != stock, any 5xx, stock ends != 0 |
 | 5 | OWASP ZAP API scan | a FAIL rule fires (injection, XSS, path traversal, stack traces, missing security headers) |
 | 6 | OSV-Scanner | any dependency with CVSS >= 9.0 that is not accepted in `osv-scanner.toml` (reason + guard test + expiry) |
-| 7 | JaCoCo coverage | line coverage < 96 % or branch coverage < 85 % (measured 96.9 % / 86.6 %) |
+| 7 | JaCoCo coverage | line coverage < 97 % or branch coverage < 88 % (measured 97.5 % / 88.3 %) |
 | 8 | PIT mutation testing | mutation score of the business logic < 84 % (measured 84.9 %; was 65.5 % before the tests it found) |
 | 9 | Traceability | the RTM references a test that does not exist (`check_rtm.py`) |
 | 10 | Docker | images do not build, a container is not healthy, or the smoke tests fail against the containers |
@@ -194,6 +194,6 @@ test is a defect, not "just re-run it".
 * Payments use a **mock gateway**; a real provider would need sandbox contract tests.
 * Lockout state is **in memory**: with several backend instances it must move to Redis.
 * Logout is client-side; a stolen token stays valid until it expires (1 hour).
-* Spring Boot 3.5 is out of open-source support since June 2026; patched libraries are pinned
-  and monitored in CI until the move to Spring Boot 4.
+* Tomcat and Jackson are pinned to patch releases newer than the ones Spring Boot 4.1.1 manages (OSV
+  advisories); remove each pin when Boot ships that version (CI "Versions" annotations show it).
 * Performance numbers from the 2-CPU CI runner are for **comparison between runs**, not capacity planning.
