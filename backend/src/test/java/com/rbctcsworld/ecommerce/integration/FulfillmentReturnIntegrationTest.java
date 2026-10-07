@@ -1,11 +1,11 @@
 package com.rbctcsworld.ecommerce.integration;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -54,7 +54,7 @@ class FulfillmentReturnIntegrationTest {
     }
 
     private String token(ResultActions r) throws Exception {
-        return json(r).get("token").asText();
+        return json(r).get("token").asString();
     }
 
     private static MockHttpServletRequestBuilder as(MockHttpServletRequestBuilder b, String token) {
@@ -106,7 +106,7 @@ class FulfillmentReturnIntegrationTest {
         long id = paid();
         String tracking = json(ship(id).andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SHIPPED"))
-                .andExpect(jsonPath("$.trackingNumber").value(matchesPattern("UPS-\\d{12}")))).get("trackingNumber").asText();
+                .andExpect(jsonPath("$.trackingNumber").value(matchesPattern("UPS-\\d{12}")))).get("trackingNumber").asString();
         deliver(id).andExpect(status().isOk()).andExpect(jsonPath("$.deliveredAt").exists());
 
         mvc.perform(as(get("/api/orders/" + id + "/tracking"), customer))

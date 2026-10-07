@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -26,6 +28,15 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * Authentication is JWT only (JwtFilter). Declaring this bean stops Spring Boot from creating an in-memory
+     * user with a generated password (printed on every start). Nothing may log in through it.
+     */
+    @Bean
+    UserDetailsService noFormLogin() {
+        return username -> { throw new UsernameNotFoundException("Form/basic login is disabled; use /api/auth/login"); };
     }
 
     @Bean

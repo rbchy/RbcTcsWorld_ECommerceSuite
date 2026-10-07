@@ -1,9 +1,9 @@
 package com.rbctcsworld.ecommerce.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -89,7 +89,7 @@ class SecurityIntegrationTest {
         String token = mapper.readTree(register(sneaky, ",\"role\":\"ADMIN\"")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.role").value("CUSTOMER"))
-                .andReturn().getResponse().getContentAsString()).get("token").asText();
+                .andReturn().getResponse().getContentAsString()).get("token").asString();
         mvc.perform(get("/api/admin/orders").header("Authorization", "Bearer " + token)).andExpect(status().isForbidden());
     }
 
