@@ -14,17 +14,25 @@ export default function Home() {
   const [flash, setFlash] = useState('');
 
   // The catalog is paginated (DEF-007): 20 products per request, "Load more" fetches the next page.
-  const load = (pageNo, append) =>
+  // isCurrent: DEF-016 - every keystroke in the search box sends a request, and responses can arrive out of
+  // order. A late answer for "mo" must never replace the results for "mouse", so stale answers are dropped.
+  const load = (pageNo, append, isCurrent = () => true) =>
     api.get('/products', { params: { q, page: pageNo, size: PAGE_SIZE } })
       .then(r => {
+        if (!isCurrent()) return;
         setProducts(prev => (append ? [...prev, ...r.data] : r.data));
         setTotal(Number(r.headers['x-total-count'] ?? r.data.length));
         setPage(pageNo);
         setError('');
       })
-      .catch(e => { if (!append) setProducts([]); setError(errorText(e)); });
+      .catch(e => { if (!isCurrent()) return; if (!append) setProducts([]); setError(errorText(e)); });
 
-  useEffect(() => { load(0, false); }, [q]);
+  // Short debounce (fewer requests while typing) + a guard so only the newest search may update the list.
+  useEffect(() => {
+    let current = true;
+    const timer = setTimeout(() => load(0, false, () => current), q ? 200 : 0);
+    return () => { current = false; clearTimeout(timer); };
+  }, [q]);
 
   const add = async (productId, quantity) => {
     if (!getSession()) { go('/login'); return; }
