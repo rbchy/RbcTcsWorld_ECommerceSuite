@@ -24,10 +24,12 @@
 <dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><scope>test</scope></dependency>
 </dependencies><build><plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin>
 <!-- JaCoCo code coverage: agent during tests, HTML/XML/CSV report and a minimum gate in "mvn verify" -->
-<plugin><groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.13</version>
+<plugin><groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.14</version>
 <configuration><excludes><exclude>com/rbctcsworld/ecommerce/EcommerceApplication.class</exclude></excludes></configuration>
 <executions>
-<execution><id>prepare-agent</id><goals><goal>prepare-agent</goal></goals></execution>
+<execution><id>prepare-agent</id><goals><goal>prepare-agent</goal></goals>
+<!-- Mockito generates mock classes at runtime: never instrument them (noise on newer JDKs) -->
+<configuration><excludes><exclude>**/*$MockitoMock$*</exclude></excludes></configuration></execution>
 <execution><id>report</id><phase>verify</phase><goals><goal>report</goal></goals></execution>
 <execution><id>check</id><phase>verify</phase><goals><goal>check</goal></goals>
 <configuration><rules><rule><element>BUNDLE</element><limits>

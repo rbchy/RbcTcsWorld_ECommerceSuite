@@ -23,7 +23,9 @@ pipeline {
     }
 
     environment {
-        PATH = "/opt/homebrew/bin:/usr/local/bin:${env.PATH}"   // Homebrew tools on macOS agents
+        // macOS agents: Homebrew (mvn, k6, jq) and Docker Desktop's CLI, which lives in ~/.docker/bin when
+        // Docker Desktop was installed "per user" - Jenkins does not read the login shell's PATH.
+        PATH = "/opt/homebrew/bin:/usr/local/bin:${env.HOME}/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:${env.PATH}"
         BASE_URL = 'http://localhost:8081'
         UI_URL = 'http://localhost:5173'
         COMPOSE = 'docker compose --profile app'
@@ -31,6 +33,20 @@ pipeline {
     }
 
     stages {
+        stage('Tools on the agent') {
+            steps {
+                // fail in seconds with a clear message instead of in the middle of the pipeline
+                sh '''
+                    for t in java mvn docker python3 jq curl; do
+                      command -v "$t" >/dev/null || { echo "MISSING TOOL: $t (PATH=$PATH)"; exit 1; }
+                    done
+                    java -version 2>&1 | head -1
+                    docker version --format 'Docker {{.Server.Version}}' || { echo "Docker Desktop is not running"; exit 1; }
+                    docker compose version
+                '''
+            }
+        }
+
         stage('Traceability matrix') {
             steps { sh 'python3 docs/qa/check_rtm.py' }
         }
