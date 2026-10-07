@@ -2,8 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 <modelVersion>4.0.0</modelVersion><parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>4.1.1</version><relativePath/></parent>
 <groupId>com.rbctcsworld</groupId><artifactId>ecommerce-backend</artifactId><version>1.0.0</version><properties><java.version>21</java.version><jjwt.version>0.12.6</jjwt.version>
-<!-- Spring Boot 4.1 (Spring Framework 7, Tomcat 11, Jackson 3, Hibernate 7) is in open-source support:
-     the library versions it manages are used as they are, no security pins needed (see docs/modules/SPRING_BOOT_4_BN.md). -->
+<!-- Spring Boot 4.1 (Spring Framework 7, Tomcat 11, Jackson 3, Hibernate 7) is in open-source support.
+     Patch releases newer than the ones Boot 4.1.1 manages, pinned on the SAME release line because OSV-Scanner
+     found advisories in the managed versions (Tomcat CVSS 9.8, Jackson 7.5). Remove a pin when Boot ships it. -->
+<tomcat.version>11.0.26</tomcat.version>
+<jackson-bom.version>3.1.7</jackson-bom.version>
+<jackson-2-bom.version>2.21.7</jackson-2-bom.version>
+<postgresql.version>42.7.14</postgresql.version>
 <!-- coverage gate: measured 96.3 % lines / 78.8 % branches (Oct 2026); set just below, raise it as tests are added, never lower it -->
 <jacoco.minimum.line>0.96</jacoco.minimum.line>
 <jacoco.minimum.branch>0.85</jacoco.minimum.branch>
