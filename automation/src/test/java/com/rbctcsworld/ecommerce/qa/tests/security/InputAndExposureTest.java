@@ -156,4 +156,12 @@ class InputAndExposureTest {
         products.list().then().body("$", everyItem(not(org.hamcrest.Matchers.hasKey("createdBy"))))
                 .body("size()", greaterThanOrEqualTo(0));
     }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"/api/products?q=q&page=0&size=20&=", "/api/products?=", "/api/products?&&q=mouse", "/api/products?=x"})
+    @DisplayName("Malformed query strings give 2xx or 4xx, never 5xx (found by OWASP ZAP after the Spring Boot 4 upgrade)")
+    void malformedQueryStrings(String path) {
+        Response r = raw.send("GET", path, null, null);
+        assertTrue(r.statusCode() < 500, path + " -> " + r.statusCode() + " " + r.asString());
+    }
 }

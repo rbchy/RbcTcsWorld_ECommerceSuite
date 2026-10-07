@@ -184,4 +184,16 @@ class SecurityIntegrationTest {
                         .doesNotContain("Emitter").doesNotContain("FragmentsRendering").doesNotContain("ServerSentEvent")
                         .doesNotContain("ModelAndView").doesNotContain("Flux"));
     }
+
+    // Found by OWASP ZAP after the Spring Boot 4 upgrade: a query string with an empty parameter name ("&=")
+    // answered 500. The resolved exception is printed so a failure says why.
+    @Test
+    void malformedQueryStringIsNeverAServerError() throws Exception {
+        for (String url : new String[] {"/api/products?q=q&page=0&size=20&=", "/api/products?=", "/api/products?=x"}) {
+            org.springframework.test.web.servlet.MvcResult r = mvc.perform(get(url)).andReturn();
+            assertThat(r.getResponse().getStatus())
+                    .as("%s -> resolved exception: %s", url, r.getResolvedException())
+                    .isLessThan(500);
+        }
+    }
 }
