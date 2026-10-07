@@ -16,6 +16,19 @@ BUILD = os.environ.get("BUILD_NUMBER", "local")
 COMMIT = (os.environ.get("GIT_COMMIT") or "")[:7]
 
 
+def pom_property(name, default):
+    try:
+        m = __import__("re").search(rf"<{name}>([^<]+)</{name}>", open("backend/pom.xml").read())
+        return float(m.group(1)) if m else default
+    except OSError:
+        return default
+
+
+GATE_LINE = 100 * pom_property("jacoco.minimum.line", 0.96)
+GATE_BRANCH = 100 * pom_property("jacoco.minimum.branch", 0.85)
+GATE_MUTATION = pom_property("pitest.mutationThreshold", 0)
+
+
 def esc(v):
     return html.escape(str(v))
 
@@ -132,11 +145,12 @@ for title, t, ref in (("Backend unit + integration", be, [("JaCoCo coverage", li
         card(title, None, "not run", [], ref)
 
 if cov:
-    card("Code coverage (JaCoCo)", cov["line"] >= 95 and cov["branch"] >= 77, f"{cov['line']:.1f}%",
-         [f"lines (gate 95%)", f"branches {cov['branch']:.1f}% (gate 77%)"], [("Coverage report", links["coverage"])])
+    card("Code coverage (JaCoCo)", cov["line"] >= GATE_LINE and cov["branch"] >= GATE_BRANCH, f"{cov['line']:.1f}%",
+         [f"lines (gate {GATE_LINE:.0f}%)", f"branches {cov['branch']:.1f}% (gate {GATE_BRANCH:.0f}%)"],
+         [("Coverage report", links["coverage"])])
 if mut:
-    card("Mutation testing (PIT)", True, f"{mut['score']:.1f}%",
-         [f"mutation score: {mut['killed']}/{mut['total']} mutants killed",
+    card("Mutation testing (PIT)", mut["score"] >= GATE_MUTATION, f"{mut['score']:.1f}%",
+         [f"mutation score (gate {GATE_MUTATION:.0f}%): {mut['killed']}/{mut['total']} mutants killed",
           f"test strength {mut['strength']:.1f}% | {mut['survived']} survived | {mut['nocov']} not covered by unit tests"],
          [("Mutation report", links["mutation"])])
 else:

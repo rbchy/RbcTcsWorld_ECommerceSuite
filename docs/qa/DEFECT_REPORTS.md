@@ -20,6 +20,9 @@ only after a regression test was added; the test is named in the report. Test-co
 | [DEF-010](#def-010) | `Retry-After` says 899 s, but the lock lasts 900 s | Product | Low | P3 | Integration test in CI | Closed |
 | [DEF-011](#def-011) | Cucumber run fails with DuplicateStepDefinitionException | Test code | Medium | P2 | Local run (Mac) | Closed |
 | [DEF-012](#def-012) | `-Dgroups=ui` run fails: Cucumber suite "did not discover any tests" | Test code | Low | P3 | Local run (Mac) | Closed |
+| [DEF-013](#def-013) | "Paid order cannot be paid again" test passed even when the card was charged | Test code | High | P1 | Mutation testing (PIT) | Closed |
+| [DEF-014](#def-014) | Jenkins on macOS: `docker: command not found` | Test infrastructure | Medium | P2 | First Jenkins run (Mac) | Closed |
+| [DEF-015](#def-015) | OWASP ZAP crashes on Apple Silicon (DOM XSS rule starts Firefox) | Test infrastructure | Medium | P2 | Jenkins run (Mac, ARM) | Closed |
 
 **Where defects were found** - one reason each test layer exists:
 
@@ -32,6 +35,8 @@ only after a regression test was added; the test is named in the report. Test-co
 | Performance (k6) | DEF-007 |
 | CI on a different OS / repeated runs | DEF-008, DEF-009, DEF-010 |
 | Running the suite like a user would (local, filters) | DEF-011, DEF-012 |
+| Mutation testing (tests of the tests) | DEF-013 |
+| A second CI system on another CPU architecture (Jenkins, Mac ARM) | DEF-014, DEF-015 |
 
 ---
 
@@ -298,6 +303,58 @@ Cucumber matches step text and ignores the Given/When/Then keyword, so it counte
 **Root cause:** with a tag filter that matches no scenario, the JUnit suite engine reports an empty
 suite as an error.
 **Fix:** `@Suite(failIfNoTests = false)` on the Cucumber runner.
+
+---
+
+## DEF-013
+**"Paid order cannot be paid again" test passed even when the card was charged**
+
+| Field | Value |
+|---|---|
+| Severity / Priority | High / P1 - the test protecting "no money moves before the 409" protected nothing |
+| Component | `OrderServiceTest#paidOrderCannotBePaidAgain` (test code); `OrderService.pay` |
+| Found by | PIT mutation testing: the mutant "removed call to `assertCanMoveTo(PAID)`" in `OrderService.pay` **survived** |
+
+**Steps:** remove the line `order.assertCanMoveTo(OrderStatus.PAID)` from `OrderService.pay` and run the unit tests.
+**Expected:** a test fails, because now the card is charged first and only then `markPaid()` throws 409.
+**Actual:** all tests green.
+**Root cause:** the test checked `verify(payments, never()).charge(anyLong(), any(), any())`. In Mockito 5,
+`anyLong()` does **not** match `null`, and the order in the test had no id. So the call `charge(null, ...)` did
+not match and "never" was always true - a vacuous assertion.
+**Fix:** `any()` (matches null). Same rule applied to every `verify(..., never())` in the backend tests.
+Proved locally: with the guard removed, the corrected test fails; with the guard in place it passes.
+**Lesson:** a negative assertion ("never called") can pass for the wrong reason. Mutation testing is how
+you find assertions that cannot fail.
+
+---
+
+## DEF-014
+**Jenkins on macOS: `docker: command not found`**
+
+| Field | Value |
+|---|---|
+| Severity / Priority | Medium / P2 - Jenkins builds #1-#3 red, product unaffected |
+| Environment | Jenkins LTS (Homebrew service) on macOS, Docker Desktop installed per user |
+
+**Root cause:** Docker Desktop puts its CLI in `~/.docker/bin`. The Terminal finds it, but Jenkins runs as a
+service with a minimal `PATH`. **Fix:** `PATH` in the Jenkinsfile includes `~/.docker/bin` and Docker.app's bin
+folder, and a new first stage "Tools on the agent" fails in seconds with the name of any missing tool.
+
+---
+
+## DEF-015
+**OWASP ZAP crashes on Apple Silicon (DOM XSS rule starts Firefox)**
+
+| Field | Value |
+|---|---|
+| Severity / Priority | Medium / P2 - Jenkins builds #4-#6 red after ~9 minutes, no ZAP report |
+| Environment | `ghcr.io/zaproxy/zaproxy:stable` on Docker Desktop, Mac ARM (aarch64); GitHub Actions (x86) was green |
+
+**Root cause:** rule 40026 "DOM Based XSS" starts headless Firefox inside the ZAP container. On ARM the browser
+start timed out repeatedly, and the ZAP daemon died (`Connection refused`, exit 3).
+**Fix:** rule 40026 set to `IGNORE` in `security/zap/zap-rules.tsv` with the reason: this API returns JSON, there
+is no DOM. Verified in build #7 that the other active rules really ran (SQL injection, XSS reflected/persistent,
+path traversal, command injection, XXE all PASS over 380 URLs), so the gate was not weakened.
 
 ---
 

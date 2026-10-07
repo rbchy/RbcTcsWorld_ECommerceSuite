@@ -10,11 +10,11 @@
 <log4j2.version>2.25.5</log4j2.version>
 <commons-lang3.version>3.18.0</commons-lang3.version>
 <!-- coverage gate: measured 96.3 % lines / 78.8 % branches (Oct 2026); set just below, raise it as tests are added, never lower it -->
-<jacoco.minimum.line>0.95</jacoco.minimum.line>
-<jacoco.minimum.branch>0.77</jacoco.minimum.branch>
+<jacoco.minimum.line>0.96</jacoco.minimum.line>
+<jacoco.minimum.branch>0.85</jacoco.minimum.branch>
 <!-- PIT mutation testing (profile "mutation"): minimum mutation score in %, ratchet only upwards -->
 <pitest.version>1.30.0</pitest.version>
-<pitest.mutationThreshold>0</pitest.mutationThreshold>
+<pitest.mutationThreshold>84</pitest.mutationThreshold>
 </properties>
 <dependencies>
 <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency><dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-validation</artifactId></dependency><dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-data-jpa</artifactId></dependency><dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-security</artifactId></dependency><dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-actuator</artifactId></dependency>

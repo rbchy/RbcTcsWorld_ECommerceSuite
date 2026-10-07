@@ -131,10 +131,11 @@ A push to `main` is green only if all of these pass (`.github/workflows/ci.yml`;
 | 4 | k6 flash sale | orders created != stock, any 5xx, stock ends != 0 |
 | 5 | OWASP ZAP API scan | a FAIL rule fires (injection, XSS, path traversal, stack traces, missing security headers) |
 | 6 | OSV-Scanner | any dependency with CVSS >= 9.0 that is not accepted in `osv-scanner.toml` (reason + guard test + expiry) |
-| 7 | JaCoCo coverage | line coverage < 95 % or branch coverage < 77 % (measured 96.3 % / 78.8 %) |
-| 8 | Traceability | the RTM references a test that does not exist (`check_rtm.py`) |
-| 9 | Docker | images do not build, a container is not healthy, or the smoke tests fail against the containers |
-| 10 | Jenkinsfile | the declarative validator of a real Jenkins rejects the pipeline |
+| 7 | JaCoCo coverage | line coverage < 96 % or branch coverage < 85 % (measured 96.9 % / 86.6 %) |
+| 8 | PIT mutation testing | mutation score of the business logic < 84 % (measured 84.6 %; was 65.5 % before the tests it found) |
+| 9 | Traceability | the RTM references a test that does not exist (`check_rtm.py`) |
+| 10 | Docker | images do not build, a container is not healthy, or the smoke tests fail against the containers |
+| 11 | Jenkinsfile | the declarative validator of a real Jenkins rejects the pipeline |
 
 Reports produced on every run: Allure (published), JUnit XML, Cucumber HTML, k6 HTML/JSON,
 ZAP HTML/JSON, OSV JSON.

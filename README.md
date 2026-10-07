@@ -1,10 +1,10 @@
 # RbcTcsWorld E-Commerce QA Automation Platform
 
 [![CI](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml)
-![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-green) ![Tests](https://img.shields.io/badge/tests-518-brightgreen) [![Coverage](https://img.shields.io/badge/coverage-96%25%20lines-brightgreen)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/)
+![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-green) ![Tests](https://img.shields.io/badge/tests-548-brightgreen) [![Coverage](https://img.shields.io/badge/coverage-96%25%20lines-brightgreen)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/)
 [![Allure Report](https://img.shields.io/badge/Allure-live%20report-orange)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/)
 
-**518 automated tests** (249 backend unit/integration + 269 API, database, security, BDD and UI), k6 performance
+**548 automated tests** (279 backend unit/integration + 269 API, database, security, BDD and UI), k6 performance
 gates, OWASP ZAP and dependency scans, 96 % line coverage - all on every push, in GitHub Actions and Jenkins.
 
 An Amazon-inspired (not a copy) e-commerce platform built QA-first: a Spring Boot backend plus a
@@ -90,7 +90,7 @@ After pulling new modules: right-click project → Maven → Update Project (Alt
 - Automation: JUnit 5, REST Assured (API clients), JDBC (read-only DB validation), Selenium (Page Objects), Cucumber + PicoContainer.
 - Frontend: React + Vite.
 - Containers: multi-stage Dockerfiles (backend on JRE 21 as a non-root user, storefront on nginx with the `/api` reverse proxy), compose start order by health checks.
-- CI/CD: GitHub Actions and an equivalent Jenkinsfile (validated by a real Jenkins in CI). Gates: tests, JaCoCo coverage (>= 95 % lines, >= 77 % branches), traceability check, Docker smoke, k6 thresholds, OWASP ZAP, OSV-Scanner.
-- Coverage report: https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/
+- CI/CD: GitHub Actions and an equivalent Jenkinsfile (validated by a real Jenkins in CI). Gates: tests, JaCoCo coverage (>= 96 % lines, >= 85 % branches), PIT mutation score (>= 84 %), traceability check, Docker smoke, k6 thresholds, OWASP ZAP, OSV-Scanner.
+- Coverage report: https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/ | Mutation report (PIT): https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/mutation/
 
 No automation suite can guarantee finding every defect; the goal is risk-based, layered coverage.

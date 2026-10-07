@@ -245,10 +245,10 @@ class ReviewServiceTest {
 
     @Test
     void emptyModerationFilterListsEveryReview() {
-        when(reviews.findAllByOrderByIdDesc()).thenReturn(List.of());
+        when(reviews.findAllByOrderByIdDesc()).thenReturn(List.of(published(9, 21L, 4, 0)));
 
-        assertThat(service.adminList(null)).isEmpty();
-        assertThat(service.adminList(" ")).isEmpty();
+        assertThat(service.adminList(null)).extracting(ReviewResponse::id).containsExactly(9L);
+        assertThat(service.adminList(" ")).extracting(ReviewResponse::id).containsExactly(9L);
         verify(reviews, org.mockito.Mockito.times(2)).findAllByOrderByIdDesc();
     }
 
