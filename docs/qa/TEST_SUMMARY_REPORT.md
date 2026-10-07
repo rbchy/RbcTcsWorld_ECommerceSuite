@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Release | 1.0 (Modules 0-5, storefront UI, performance and security hardening) |
-| Build | `main`, CI run on 2026-10-07 (GitHub Actions) and Jenkins build #7 on macOS (all gates green) |
+| Release | 1.1 (Modules 0-5, storefront UI, performance and security hardening; Spring Boot 4.1) |
+| Build | branch `upgrade/spring-boot-4` -> `main`, CI on 2026-10-07 (GitHub Actions), all gates green |
 | Prepared by | RB Chowdhury, QA Lead |
 | Plan | [Test Plan](TEST_PLAN.md) |
 
@@ -18,23 +18,23 @@ catalog the endpoint p95 dropped from 22 ms to 9 ms (-59 %).
 
 | # | Criterion | Target | Result | |
 |---|---|---|---|---|
-| 1 | Automated tests on CI | 100 % pass | **548 / 548** passed, 0 skipped (+44 smoke against Docker) | ✅ |
+| 1 | Automated tests on CI | 100 % pass | **557 / 557** passed, 0 skipped (+44 smoke against Docker) | ✅ |
 | 2 | Requirement coverage | >= 95 % | **59 / 59 = 100 %** | ✅ |
 | 3 | Open Critical / High defects | 0 | **0** | ✅ |
 | 4 | k6 smoke + load SLOs | all pass | all pass | ✅ |
 | 5 | k6 flash sale | orders = stock, stock 0 | 15 / 15 (CI), 50 / 50 (local, 300 buyers) | ✅ |
 | 6 | OWASP ZAP | 0 Medium / High | **0** (Low only, informational) | ✅ |
-| 7 | OSV-Scanner | 0 unaccepted CVSS >= 9 | **0 open** (was 21); 2 accepted, guarded, expire 2026-11-05 | ✅ |
-| 8 | Code coverage (JaCoCo) | >= 96 % lines, >= 85 % branches | **96.9 % lines, 86.6 % branches** | ✅ |
+| 7 | OSV-Scanner | 0 unaccepted CVSS >= 9 | **0 open, 0 accepted** (was 21; both Spring CVEs fixed by the Boot 4 upgrade) | ✅ |
+| 8 | Code coverage (JaCoCo) | >= 97 % lines, >= 88 % branches | **97.5 % lines, 88.3 % branches** | ✅ |
 | 9 | Mutation score (PIT, business logic) | >= 84 % | **84.9 %** (was 65.5 %); test strength 97.5 % | ✅ |
 
 ## 3. Test execution
 
 | Suite | Tests | Passed | Failed | Skipped | Runs against |
 |---|---|---|---|---|---|
-| Backend unit + integration | 279 | 279 | 0 | 0 | H2 (PostgreSQL mode) + Flyway |
-| Automation: API, DB, security, BDD, UI | 269 | 269 | 0 | 0 | Backend + PostgreSQL 16 + headless Chrome |
-| **Total** | **548** | **548** | **0** | **0** | |
+| Backend unit + integration | 284 | 284 | 0 | 0 | H2 (PostgreSQL mode) + Flyway |
+| Automation: API, DB, security, BDD, UI | 273 | 273 | 0 | 0 | Backend + PostgreSQL 16 + headless Chrome |
+| **Total** | **557** | **557** | **0** | **0** | |
 | Smoke against the Docker images | 44 | 44 | 0 | 0 | `docker compose --profile app` (postgres + backend + nginx storefront) |
 
 The automation total contains 43 Cucumber scenarios and 12 Selenium UI tests; the rest are API,
@@ -65,7 +65,7 @@ cost of correctness and is far below the 3-second target.
 | Access-control matrix (19 endpoints x 3 roles) | all as designed |
 | Injection, path traversal, oversized input, malformed bodies | no success, no 5xx |
 | OWASP ZAP API scan (OpenAPI, logged in) | 0 Medium/High; 1 Low fixed (CORP header) |
-| OSV-Scanner | 21 vulnerable packages / 85 advisories -> 0 (Spring Boot 3.5.16 + pinned patches) |
+| OSV-Scanner | 21 vulnerable packages / 85 advisories -> 0 (Spring Boot 3.5.16 + pins); after the Boot 4.1 upgrade 0 with no accepted exceptions |
 
 ## 6. Defects
 
@@ -73,11 +73,11 @@ cost of correctness and is far below the 3-second target.
 |---|---|---|---|
 | Critical | 1 | 1 | 0 |
 | High | 4 | 4 | 0 |
-| Medium | 7 | 7 | 0 |
+| Medium | 9 | 9 | 0 |
 | Low | 3 | 3 | 0 |
-| **Total** | **15** | **15** | **0** |
+| **Total** | **17** | **17** | **0** |
 
-8 product defects, 5 test-code defects, 2 test-infrastructure defects. Every closed product defect has a regression test.
+10 product defects, 5 test-code defects, 2 test-infrastructure defects. Every closed product defect has a regression test.
 Details: [Defect Reports](DEFECT_REPORTS.md).
 
 ## 7. Residual risks accepted for release 1.0
@@ -86,9 +86,7 @@ Details: [Defect Reports](DEFECT_REPORTS.md).
 |---|---|---|
 | Login lock is per instance (memory) | One backend instance | Redis when scaling out |
 | Logged-out token valid until expiry (1 h) | Short expiry | Refresh tokens / denylist |
-| Spring Boot 3.5 out of OSS support | Patched libraries pinned and monitored in CI | Migrate to Spring Boot 4 |
-| CVE-2026-47884 in spring-webmvc 6.2.19 (CVSS 9.8, no 6.2.x fix) | Exploitable only through XsltView; this API renders no views. Guard test fails the build if one is added | Exception expires 2026-11-05: upgrade or re-assess |
-| GHSA-j9f9-w8pj-32f8 in spring-webmvc 6.2.19 (CVSS 9.8, Server-Sent Events, no open-source 6.2.x fix) | Exploitable only when the app streams SSE; this API streams none. Guard test fails the build if an SSE or WebMvc.fn endpoint is added | Same expiry and plan: Spring Framework 7 / Spring Boot 4 |
+| Tomcat 11.0.26 / Jackson 3.1.7 pinned above Boot 4.1.1 | Fix advisories in the managed versions | Remove the pins when Boot ships them |
 | 8 surviving mutants (PIT) | 5 are equivalent (cannot change behaviour, e.g. Luhn `d > 9` vs `d >= 9`), 3 are defensive or housekeeping code | Reviewed one by one in docs/modules/MUTATION_BN.md |
 | Mock payment gateway | No real money in this release | Provider sandbox contract tests |
 | Registration reveals that an e-mail exists | Usability; common e-commerce trade-off | Re-evaluate with product owner |
@@ -104,5 +102,7 @@ Details: [Defect Reports](DEFECT_REPORTS.md).
 5. **Verify that a "fixed" version really exists:** an advisory pointed to an unpublished Tomcat release (DEF-005).
 6. **Test the tests:** 96 % line coverage hid a test that could not fail (DEF-013). Mutation testing raised the
    score from 65.5 % to 84.9 % with 30 targeted tests, and branch coverage from 78.8 % to 86.6 % as a side effect.
-7. **Make CI explain itself:** failures, totals, k6, ZAP and OSV results are annotations on the run page,
+7. **Upgrade on a branch behind every gate:** the Spring Boot 4 move was merged only when all jobs were green;
+   the gates found a critical Tomcat CVE, a UI race (DEF-016) and a Tomcat 11 regression only a real server shows (DEF-017).
+8. **Make CI explain itself:** failures, totals, k6, ZAP and OSV results are annotations on the run page,
    so a red build can be understood without downloading logs.

@@ -1,19 +1,6 @@
 # Accepted vulnerability exceptions for OSV-Scanner. Every entry needs: the advisory, WHY it is not
 # exploitable here, the test that guards that reason, and an expiry date (the finding comes back then).
-
-[[IgnoredVulns]]
-id = "GHSA-pc63-qcmh-9cmg"   # CVE-2026-47884, spring-webmvc 6.2.0-6.2.19, CVSS 9.8, no fix on the 6.2 line yet
-ignoreUntil = 2026-11-05
-reason = """Exploitable only through XsltView view rendering with an '/**' mapping. This backend is a pure JSON API:
-all controllers are @RestController, there is no ViewResolver, no XsltView and no template engine.
-Guarded by SecurityIntegrationTest#noXsltViewRenderingIsConfigured_CVE_2026_47884, which fails the build if one is added.
-Review on expiry: upgrade when a 6.2.x fix is published, or plan the move to Spring Framework 7 / Spring Boot 4."""
-
-[[IgnoredVulns]]
-id = "GHSA-j9f9-w8pj-32f8"   # spring-webmvc 6.2.0-6.2.19, CVSS 9.8, Server-Sent Events, no fix on the 6.2 line (open source)
-ignoreUntil = 2026-11-05
-reason = """Exploitable only when the application streams Server-Sent Events (WebMvc.fn ServerResponse.sse(...),
-SseEmitter, or view fragments over SSE) containing attacker-controlled text. This backend streams no SSE at all:
-no RouterFunction beans, every endpoint returns plain JSON.
-Guarded by SecurityIntegrationTest#noServerSentEventsOrFunctionalEndpoints_GHSA_j9f9_w8pj_32f8.
-Review on expiry: same plan as GHSA-pc63-qcmh-9cmg (6.2.x fix or Spring Framework 7 / Spring Boot 4)."""
+#
+# None at the moment. The two Spring MVC advisories accepted under Spring Boot 3.5 (GHSA-pc63-qcmh-9cmg,
+# CVE-2026-47884 XsltView; GHSA-j9f9-w8pj-32f8, Server-Sent Events) are fixed in Spring Framework 7.0.9,
+# which Spring Boot 4.1.1 brings. Their guard tests stay in SecurityIntegrationTest as architecture rules.

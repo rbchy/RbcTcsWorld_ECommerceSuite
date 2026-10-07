@@ -1,6 +1,7 @@
 package com.rbctcsworld.ecommerce.qa.tests.security;
 
 import com.rbctcsworld.ecommerce.qa.api.AuthClient;
+import com.rbctcsworld.ecommerce.qa.config.TestConfig;
 import com.rbctcsworld.ecommerce.qa.api.ProductClient;
 import com.rbctcsworld.ecommerce.qa.api.RawClient;
 import com.rbctcsworld.ecommerce.qa.api.ReviewClient;
@@ -155,5 +156,16 @@ class InputAndExposureTest {
         assertFalse(body.contains("password") || body.contains("$2a$"), body);
         products.list().then().body("$", everyItem(not(org.hamcrest.Matchers.hasKey("createdBy"))))
                 .body("size()", greaterThanOrEqualTo(0));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"/api/products?q=q&page=0&size=20&=", "/api/products?=", "/api/products?&&q=mouse", "/api/products?=x"})
+    @DisplayName("Malformed query strings give 2xx or 4xx, never 5xx (found by OWASP ZAP after the Spring Boot 4 upgrade)")
+    void malformedQueryStrings(String path) throws Exception {
+        // plain JDK HTTP client: REST Assured refuses to send a parameter without a name
+        java.net.http.HttpResponse<String> r = java.net.http.HttpClient.newHttpClient().send(
+                java.net.http.HttpRequest.newBuilder(java.net.URI.create(TestConfig.baseUrl() + path)).GET().build(),
+                java.net.http.HttpResponse.BodyHandlers.ofString());
+        assertTrue(r.statusCode() < 500, path + " -> " + r.statusCode() + " " + r.body());
     }
 }

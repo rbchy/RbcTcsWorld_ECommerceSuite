@@ -23,6 +23,8 @@ only after a regression test was added; the test is named in the report. Test-co
 | [DEF-013](#def-013) | "Paid order cannot be paid again" test passed even when the card was charged | Test code | High | P1 | Mutation testing (PIT) | Closed |
 | [DEF-014](#def-014) | Jenkins on macOS: `docker: command not found` | Test infrastructure | Medium | P2 | First Jenkins run (Mac) | Closed |
 | [DEF-015](#def-015) | OWASP ZAP crashes on Apple Silicon (DOM XSS rule starts Firefox) | Test infrastructure | Medium | P2 | Jenkins run (Mac, ARM) | Closed |
+| [DEF-016](#def-016) | Storefront search shows results of an older search when typing fast | Product - UI | Medium | P2 | Selenium UI test (during the Spring Boot 4 upgrade) | Closed |
+| [DEF-017](#def-017) | Query string with a parameter without a name returns 500 | Product - regression | Medium | P2 | OWASP ZAP + API test against the real server | Closed |
 
 **Where defects were found** - one reason each test layer exists:
 
@@ -37,6 +39,7 @@ only after a regression test was added; the test is named in the report. Test-co
 | Running the suite like a user would (local, filters) | DEF-011, DEF-012 |
 | Mutation testing (tests of the tests) | DEF-013 |
 | A second CI system on another CPU architecture (Jenkins, Mac ARM) | DEF-014, DEF-015 |
+| Full regression during a framework upgrade (Spring Boot 4) | DEF-016, DEF-017 |
 
 ---
 
@@ -355,6 +358,40 @@ start timed out repeatedly, and the ZAP daemon died (`Connection refused`, exit 
 **Fix:** rule 40026 set to `IGNORE` in `security/zap/zap-rules.tsv` with the reason: this API returns JSON, there
 is no DOM. Verified in build #7 that the other active rules really ran (SQL injection, XSS reflected/persistent,
 path traversal, command injection, XXE all PASS over 380 URLs), so the gate was not weakened.
+
+---
+
+## DEF-016
+**Storefront search shows results of an older search when typing fast**
+
+| Field | Value |
+|---|---|
+| Severity / Priority | Medium / P2 - a customer searching "mouse" may see keyboards |
+| Component | `frontend/src/pages/Home.jsx` |
+| Found by | Selenium `HomePageUiTest.searchFilters` (timed out waiting for only matching cards) |
+
+**Root cause:** every keystroke sends `GET /api/products?q=...`; responses can arrive out of order, and the
+last one to arrive won, even when it answered an older text ("mo"). The timing change of the upgrade made it visible.
+**Fix:** only the newest search may update the list (a guard flag per request, cleared by the effect cleanup)
+plus a 200 ms debounce. **Regression test:** `searchFilters` (types the word in one go, like a fast user).
+
+---
+
+## DEF-017
+**Query string with a parameter without a name returns 500**
+
+| Field | Value |
+|---|---|
+| Severity / Priority | Medium / P2 - a client error reported as a server fault; noise in monitoring, possible probe target |
+| Component | `GlobalExceptionHandler`; Tomcat 11 parameter parsing |
+| Found by | OWASP ZAP rule 100000 after the Spring Boot 4 upgrade; reproduced by an API test against the real server |
+
+**Steps:** `GET /api/products?=x` (or `?q=q&page=0&size=20&=`). **Expected:** 400. **Actual:** 500 "Unexpected server error".
+**Root cause:** Tomcat 11 throws `InvalidParameterException` (an `IllegalStateException`) from `getParameter()`
+for a malformed query string; it reached the catch-all handler. MockMvc does not use Tomcat, so a MockMvc test passed.
+**Fix:** the handler maps `InvalidParameterException` (also when wrapped) to its 4xx code, default 400.
+**Regression tests:** `InputAndExposureTest.malformedQueryStrings` (JDK HTTP client, real server; REST Assured
+cannot send a nameless parameter), `GlobalExceptionHandlerTest`. CI now shows every backend 500 with its exception.
 
 ---
 

@@ -1,7 +1,7 @@
 # RbcTcsWorld E-Commerce QA Automation Platform
 
 [![CI](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml)
-![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 3.5](https://img.shields.io/badge/Spring%20Boot-3.5-green) ![Tests](https://img.shields.io/badge/tests-548-brightgreen) [![Coverage](https://img.shields.io/badge/coverage-96.9%25%20lines-brightgreen)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/) [![Mutation](https://img.shields.io/badge/mutation%20score-84.9%25-brightgreen)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/mutation/)
+![Java 21](https://img.shields.io/badge/Java-21-blue) ![Spring Boot 4.1](https://img.shields.io/badge/Spring%20Boot-4.1-green) ![Tests](https://img.shields.io/badge/tests-557-brightgreen) [![Coverage](https://img.shields.io/badge/coverage-97.5%25%20lines-brightgreen)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/) [![Mutation](https://img.shields.io/badge/mutation%20score-84.9%25-brightgreen)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/mutation/)
 [![Allure Report](https://img.shields.io/badge/Allure-live%20report-orange)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/)
 
 An Amazon-inspired (not a copy) e-commerce platform built **QA-first** by one engineer: a Spring Boot backend,
@@ -11,9 +11,9 @@ a React storefront, and a layered test system that gates every push - in GitHub 
 
 | Area | What runs on every push | Result |
 |---|---|---|
-| Unit + integration | 279 JUnit 5 tests (H2 + Flyway, Mockito) | 100 % pass |
-| API, DB, BDD, UI | 269 tests: REST Assured, JDBC checks, 43 Cucumber scenarios, 12 Selenium journeys | 100 % pass |
-| Test quality | JaCoCo coverage gate + PIT mutation testing | 96.9 % lines, 87 % branches, mutation score 84.9 % |
+| Unit + integration | 284 JUnit 5 tests (H2 + Flyway, Mockito) | 100 % pass |
+| API, DB, BDD, UI | 273 tests: REST Assured, JDBC checks, 43 Cucumber scenarios, 12 Selenium journeys | 100 % pass |
+| Test quality | JaCoCo coverage gate + PIT mutation testing | 97.5 % lines, 88 % branches, mutation score 84.9 % |
 | Performance | k6 smoke, flash sale (60 buyers, 15 units) and catalog with SLO thresholds | 0 % errors, all SLO thresholds met, 0 oversold |
 | Security | OWASP ZAP API scan (116 rules pass), OSV dependency scan with a critical-CVE gate | 0 Medium/High, 0 open critical CVEs |
 | Delivery | Whole app in Docker (one command), 44 smoke tests against the images | healthy, non-root containers |
@@ -48,9 +48,10 @@ flowchart LR
 - **A test that could never fail (DEF-013).** Coverage was 96 %, but mutation testing showed that
   "a paid order cannot be paid again" passed even when the card was charged: `anyLong()` does not match `null`.
   Fixed, plus 30 targeted tests: mutation score 65.5 % -> 84.9 %, branch coverage 78.8 % -> 87 %.
-- **Critical CVEs without a fix.** Two CVSS 9.8 advisories in Spring MVC with no 6.2.x patch. Analysed,
-  accepted only with a written reason, an expiry date and a guard test that fails the build if the vulnerable
-  feature (XSLT views, Server-Sent Events) is ever added.
+- **Critical CVEs without a fix, then a framework upgrade.** Two CVSS 9.8 advisories in Spring MVC had no 3.5 patch:
+  accepted for a few weeks with a reason, an expiry date and a guard test, then removed for good by upgrading to
+  Spring Boot 4.1 (Spring 7, Jackson 3, Tomcat 11) on a branch. The gates caught three problems before the merge:
+  a new critical Tomcat CVE, a search race in the UI (DEF-016) and a 500 on malformed query strings (DEF-017).
 - **Performance defect found by a load report (DEF-007).** The catalog had no pagination; fixed test-first,
   backward compatible: response size -91 %, endpoint p95 22 ms -> 9 ms.
 - **Security hardening found by attack tests.** Brute-force lockout (DEF-003), timing-safe login against
@@ -60,7 +61,7 @@ flowchart LR
 
 QA documents: [Test Strategy](docs/qa/TEST_STRATEGY.md) · [Test Plan](docs/qa/TEST_PLAN.md) ·
 [Risk Register](docs/qa/RISK_REGISTER.md) · [Traceability Matrix](docs/qa/TRACEABILITY_MATRIX.md) ·
-[Defect Reports (15)](docs/qa/DEFECT_REPORTS.md) · [Test Summary Report (GO)](docs/qa/TEST_SUMMARY_REPORT.md)
+[Defect Reports (17)](docs/qa/DEFECT_REPORTS.md) · [Test Summary Report (GO)](docs/qa/TEST_SUMMARY_REPORT.md)
 
 ## Modules
 
@@ -76,9 +77,10 @@ QA documents: [Test Strategy](docs/qa/TEST_STRATEGY.md) · [Test Plan](docs/qa/T
 | 5 | Verified-purchase reviews, ratings (race-safe average), moderation, wishlist with price-drop and move-to-cart; product page + wishlist UI | Done | [docs/modules/MODULE_05_REVIEWS_WISHLIST_BN.md](docs/modules/MODULE_05_REVIEWS_WISHLIST_BN.md) |
 | - | k6 performance: smoke, load, stress, spike, soak and a flash-sale concurrency test (no overselling); SLO thresholds, HTML report, smoke + flash sale in every CI build | Done | [docs/modules/PERFORMANCE_K6_BN.md](docs/modules/PERFORMANCE_K6_BN.md) |
 | - | Security: brute-force lockout, timing-safe login, JWT hardening, security headers; JWT/access-matrix/injection/exposure tests; OWASP ZAP API scan + OSV dependency scan in CI (21 vulnerable libraries -> 0) | Done | [docs/modules/SECURITY_BN.md](docs/modules/SECURITY_BN.md) |
-| - | QA documentation: test strategy, test plan, risk register, traceability matrix (59 requirements, checked in CI), 15 real defect reports, test summary report with go/no-go | Done | [docs/qa/](docs/qa/README.md) · [Bangla guide](docs/modules/QA_DOCUMENTS_BN.md) |
+| - | QA documentation: test strategy, test plan, risk register, traceability matrix (59 requirements, checked in CI), 17 real defect reports, test summary report with go/no-go | Done | [docs/qa/](docs/qa/README.md) · [Bangla guide](docs/modules/QA_DOCUMENTS_BN.md) |
 | - | CI/CD: whole app in Docker (one command), JaCoCo coverage gate, full Jenkinsfile validated by a real Jenkins, Docker smoke job, critical-CVE gate with expiring exceptions | Done | [docs/modules/CICD_BN.md](docs/modules/CICD_BN.md) |
 | - | Mutation testing (PIT): found a test that could never fail, 30 targeted tests, score 65.5 % -> 84.9 %, gate in CI and Jenkins; one "QA Reports" page per Jenkins build | Done | [docs/modules/MUTATION_BN.md](docs/modules/MUTATION_BN.md) |
+| - | Spring Boot 3.5 -> 4.1 upgrade on a branch: both accepted CVEs fixed, 0 vulnerable libraries, 2 regressions found by the gates and fixed (DEF-016, DEF-017) | Done | [docs/modules/SPRING_BOOT_4_BN.md](docs/modules/SPRING_BOOT_4_BN.md) |
 
 ## Ports and accounts (development)
 
@@ -139,11 +141,11 @@ After pulling new modules: right-click project → Maven → Update Project (Alt
 
 ## Architecture
 
-- Backend: Spring Boot 3.5, Java 21, PostgreSQL, Flyway, Spring Security + JWT (roles CUSTOMER / ADMIN).
+- Backend: Spring Boot 4.1 (Spring Framework 7, Jackson 3, Tomcat 11), Java 21, PostgreSQL, Flyway, Spring Security + JWT (roles CUSTOMER / ADMIN).
 - Automation: JUnit 5, REST Assured (API clients), JDBC (read-only DB validation), Selenium (Page Objects), Cucumber + PicoContainer.
 - Frontend: React + Vite.
 - Containers: multi-stage Dockerfiles (backend on JRE 21 as a non-root user, storefront on nginx with the `/api` reverse proxy), compose start order by health checks.
-- CI/CD: GitHub Actions and an equivalent Jenkinsfile (validated by a real Jenkins in CI). Gates: tests, JaCoCo coverage (>= 96 % lines, >= 85 % branches), PIT mutation score (>= 84 %), traceability check, Docker smoke, k6 thresholds, OWASP ZAP, OSV-Scanner.
+- CI/CD: GitHub Actions and an equivalent Jenkinsfile (validated by a real Jenkins in CI). Gates: tests, JaCoCo coverage (>= 97 % lines, >= 88 % branches), PIT mutation score (>= 84 %), traceability check, Docker smoke, k6 thresholds, OWASP ZAP, OSV-Scanner.
 - Coverage report: https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/ | Mutation report (PIT): https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/mutation/
 
 No automation suite can guarantee finding every defect; the goal is risk-based, layered coverage.

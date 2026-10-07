@@ -120,6 +120,9 @@ jobs:
       - name: Test totals
         if: always()
         run: .github/scripts/test-totals.sh automation automation/target/surefire-reports
+      - name: Backend server errors (500) as annotations
+        if: always()
+        run: .github/scripts/backend-errors.sh backend.log
       - name: Show failed tests as annotations
         if: failure()
         run: .github/scripts/annotate-failures.sh automation/target/surefire-reports
@@ -269,6 +272,9 @@ jobs:
           security/zap/summary.sh security/zap/zap-report.json
           # 0 = clean, 2 = warnings only (allowed by -I); 1 = a FAIL rule was hit; 3 = ZAP error
           if [ "$code" -eq 1 ] || [ "$code" -eq 3 ]; then echo "::error title=OWASP ZAP::exit code $code"; exit 1; fi
+      - name: Backend server errors (500) as annotations
+        if: always()
+        run: .github/scripts/backend-errors.sh backend.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:

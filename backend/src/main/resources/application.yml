@@ -11,6 +11,10 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  # Spring Boot 4 uses Jackson 3. Keep the Jackson 2 defaults so the JSON contract of the API does not change
+  # (e.g. property order, null handling for primitives); the automation suite checks that contract.
+  jackson:
+    use-jackson2-defaults: true
 
 # 8081 (not 8080) because Jenkins usually runs on 8080 on the same machine.
 # Automation, frontend proxy and README all use 8081.

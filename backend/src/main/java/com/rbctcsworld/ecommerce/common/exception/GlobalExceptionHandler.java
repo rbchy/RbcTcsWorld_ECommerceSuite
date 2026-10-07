@@ -1,6 +1,7 @@
 package com.rbctcsworld.ecommerce.common.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -90,6 +91,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> unexpected(Exception ex, HttpServletRequest req) {
+        // DEF-017: Tomcat 11 (Spring Boot 4) rejects a malformed query string, e.g. "?=x" (a parameter without a
+        // name), by throwing InvalidParameterException from request.getParameter(). It is the client's error.
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            if (t instanceof InvalidParameterException ipe) {
+                HttpStatus s = HttpStatus.resolve(ipe.getErrorCode());
+                return build(s != null && s.is4xxClientError() ? s : HttpStatus.BAD_REQUEST,
+                        "Malformed query string or form parameters", req);
+            }
+        }
         // Spring MVC's own exceptions (405 method not allowed, 404 no endpoint, 415 media type...)
         // already know their status code - keep it instead of turning them into 500.
         if (ex instanceof ErrorResponse er) {

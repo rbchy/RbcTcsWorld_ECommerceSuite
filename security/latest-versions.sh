@@ -10,11 +10,11 @@ check() {  # groupId artifactId prefix current
   if [ "$latest" = "$4" ]; then echo "::notice title=Versions::$2 $4 is the newest $3x"
   else echo "::warning title=Versions::$2 $4 -> newer $latest is available"; fi
 }
-mvn_prop() { grep -o "<$1>[^<]*</$1>" backend/pom.xml | sed 's/<[^>]*>//g'; }
-TOMCAT=$(mvn -q -f backend/pom.xml help:evaluate -Dexpression=tomcat.version -DforceStdout 2>/dev/null || echo "?")
-check org.springframework.boot spring-boot-starter-parent 3.5. "$(grep -o 'starter-parent</artifactId><version>[^<]*' backend/pom.xml | sed 's/.*<version>//')"
-check org.apache.tomcat.embed tomcat-embed-core 10.1. "$TOMCAT"
-check com.fasterxml.jackson.core jackson-databind 2.21. "$(mvn_prop jackson-bom.version)"
-check org.postgresql postgresql 42.7. "$(mvn_prop postgresql.version)"
-check org.apache.logging.log4j log4j-api 2.25. "$(mvn_prop log4j2.version)"
-check org.apache.commons commons-lang3 3. "$(mvn_prop commons-lang3.version)"
+ev() { mvn -q -f backend/pom.xml help:evaluate -Dexpression="$1" -DforceStdout 2>/dev/null || echo "?"; }
+BOOT=$(grep -o 'starter-parent</artifactId><version>[^<]*' backend/pom.xml | sed 's/.*<version>//')
+check org.springframework.boot spring-boot-starter-parent "${BOOT%.*}." "$BOOT"
+SPRING=$(ev spring-framework.version); check org.springframework spring-webmvc "${SPRING%.*}." "$SPRING"
+TOMCAT=$(ev tomcat.version);          check org.apache.tomcat.embed tomcat-embed-core "${TOMCAT%.*}." "$TOMCAT"
+PG=$(ev postgresql.version);          check org.postgresql postgresql "${PG%.*}." "$PG"
+J3=$(ev jackson-bom.version);         check tools.jackson.core jackson-databind "${J3%.*}." "$J3"
+J2=$(ev jackson-2-bom.version);       check com.fasterxml.jackson.core jackson-databind "${J2%.*}." "$J2"

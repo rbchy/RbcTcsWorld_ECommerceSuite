@@ -1,9 +1,9 @@
 package com.rbctcsworld.ecommerce.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -89,7 +89,7 @@ class SecurityIntegrationTest {
         String token = mapper.readTree(register(sneaky, ",\"role\":\"ADMIN\"")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.role").value("CUSTOMER"))
-                .andReturn().getResponse().getContentAsString()).get("token").asText();
+                .andReturn().getResponse().getContentAsString()).get("token").asString();
         mvc.perform(get("/api/admin/orders").header("Authorization", "Bearer " + token)).andExpect(status().isForbidden());
     }
 
@@ -183,5 +183,17 @@ class SecurityIntegrationTest {
                         .as("%s must not stream SSE or render view fragments", h)
                         .doesNotContain("Emitter").doesNotContain("FragmentsRendering").doesNotContain("ServerSentEvent")
                         .doesNotContain("ModelAndView").doesNotContain("Flux"));
+    }
+
+    // Found by OWASP ZAP after the Spring Boot 4 upgrade: a query string with an empty parameter name ("&=")
+    // answered 500. The resolved exception is printed so a failure says why.
+    @Test
+    void malformedQueryStringIsNeverAServerError() throws Exception {
+        for (String url : new String[] {"/api/products?q=q&page=0&size=20&=", "/api/products?=", "/api/products?=x"}) {
+            org.springframework.test.web.servlet.MvcResult r = mvc.perform(get(url)).andReturn();
+            assertThat(r.getResponse().getStatus())
+                    .as("%s -> resolved exception: %s", url, r.getResolvedException())
+                    .isLessThan(500);
+        }
     }
 }
