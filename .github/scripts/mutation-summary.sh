@@ -31,6 +31,9 @@ print("::notice title=Weakest classes (mutation score)::" + " | ".join(
 print("\nclass                        score   killed/total  survived  no-coverage")
 for p, cls, d, t, s, nc in sorted(rows, key=lambda r: r[1]):
     print(f"{cls:28s} {p:5.1f}%   {d:4d}/{t:<4d}      {s:4d}      {nc:4d}")
+# the full list in one annotation (multi-line), so it can be read on the run page without the log
+print("::notice title=All surviving mutants (" + str(len(survivors)) + ")::" + "%0A".join(
+    f"{st} {cls}.{meth}():{line} {desc}" for st, cls, meth, line, desc in sorted(survivors, key=lambda x: (x[1], int(x[3])))))
 limit = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2] else 15
 print(f"\nSurviving mutants ({len(survivors)}):")
 for i, (st, cls, meth, line, desc) in enumerate(sorted(survivors, key=lambda x: (x[1], int(x[3])))):
