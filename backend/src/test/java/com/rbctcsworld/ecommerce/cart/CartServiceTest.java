@@ -27,6 +27,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class CartServiceTest {
@@ -122,5 +123,71 @@ class CartServiceTest {
         CartResponse cart = service.getCart(EMAIL);
 
         assertThat(cart.items()).singleElement().satisfies(l -> assertThat(l.available()).isFalse());
+    }
+
+    // ---- added after mutation testing (PIT): updateItem/removeItem/clear had no unit test, and the
+    // ---- 1..10 quantity boundaries, the inactive-product check and the "available" flag survived mutation.
+
+    private CartItem line(int quantity) {
+        CartItem line = new CartItem(7L, mouse, quantity);
+        ReflectionTestUtils.setField(line, "id", 500L);
+        when(items.findByIdAndUserId(500L, 7L)).thenReturn(Optional.of(line));
+        return line;
+    }
+
+    @Test
+    void updatedQuantityMustBeBetween1And10() {
+        mouse.setStock(100);
+        CartItem line = line(2);
+        when(items.findByUserIdOrderByIdAsc(7L)).thenReturn(List.of(line));
+
+        assertThatThrownBy(() -> service.updateItem(EMAIL, 500L, 0)).isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> service.updateItem(EMAIL, 500L, CartService.MAX_QTY_PER_ITEM + 1))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("between 1 and 10");
+        assertThat(service.updateItem(EMAIL, 500L, 1).totalQuantity()).isEqualTo(1);
+        assertThat(service.updateItem(EMAIL, 500L, CartService.MAX_QTY_PER_ITEM).totalQuantity()).isEqualTo(10);
+        verify(items, times(2)).save(line);
+    }
+
+    @Test
+    void updatedQuantityMayUseTheLastUnitButNotMore() {
+        CartItem line = line(1);                                         // stock 5
+        when(items.findByUserIdOrderByIdAsc(7L)).thenReturn(List.of(line));
+
+        CartResponse cart = service.updateItem(EMAIL, 500L, 5);
+        assertThat(cart.totalQuantity()).isEqualTo(5);
+        assertThat(cart.subtotal()).isEqualByComparingTo("100.00");
+        assertThat(cart.items()).singleElement().satisfies(l -> assertThat(l.available()).isTrue());
+
+        assertThatThrownBy(() -> service.updateItem(EMAIL, 500L, 6))
+                .isInstanceOf(ConflictException.class).hasMessageContaining("available 5");
+    }
+
+    @Test
+    void productTakenOffSaleCannotBeUpdatedAndShowsUnavailable() {
+        CartItem line = line(1);
+        mouse.setActive(false);
+
+        assertThatThrownBy(() -> service.updateItem(EMAIL, 500L, 2)).isInstanceOf(NotFoundException.class);
+        assertThat(line.getQuantity()).isEqualTo(1);
+        verify(items, never()).save(any());
+
+        when(items.findByUserIdOrderByIdAsc(7L)).thenReturn(List.of(line));
+        assertThat(service.getCart(EMAIL).items()).singleElement().satisfies(l -> assertThat(l.available()).isFalse());
+    }
+
+    @Test
+    void removeDeletesTheOwnedLineAndClearEmptiesTheCart() {
+        CartItem line = line(2);
+        when(items.findByUserIdOrderByIdAsc(7L)).thenReturn(List.of());
+
+        CartResponse cart = service.removeItem(EMAIL, 500L);
+
+        verify(items).delete(line);
+        assertThat(cart.items()).isEmpty();
+        assertThat(cart.subtotal()).isEqualByComparingTo("0");
+
+        service.clear(EMAIL);
+        verify(items).deleteByUserId(7L);
     }
 }

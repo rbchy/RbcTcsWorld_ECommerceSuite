@@ -133,7 +133,7 @@ class ReturnServiceTest {
         if (restock) {
             verify(inventory).release(1L, 2, 10L, StockMovement.RETURN_RESTOCK);
         } else {
-            verify(inventory, never()).release(anyLong(), anyInt(), any(), anyString());
+            verify(inventory, never()).release(any(), anyInt(), any(), any());
         }
     }
 
@@ -148,7 +148,7 @@ class ReturnServiceTest {
 
         assertThat(r.getStatus()).isEqualTo(ReturnRequest.REJECTED);
         assertThat(o.getStatus()).isEqualTo(OrderStatus.DELIVERED);
-        verify(payments, never()).refund(anyLong(), any());
+        verify(payments, never()).refund(any(), any());
     }
 
     @Test
@@ -159,5 +159,20 @@ class ReturnServiceTest {
 
         assertThatThrownBy(() -> service.approve(5L, null)).isInstanceOf(ConflictException.class)
                 .hasMessageContaining("already REJECTED");
+    }
+
+    @Test
+    void rejectionNoteOnTheOrderTimeline() {  // added after PIT: a rejection without a note was never tested
+        CustomerOrder o = deliveredOrder(NOW.minusDays(1));
+        ReflectionTestUtils.setField(o, "status", OrderStatus.RETURN_REQUESTED);
+        when(returns.findById(5L)).thenReturn(Optional.of(new ReturnRequest(10L, ReturnPolicy.NO_LONGER_NEEDED, null)));
+        when(orders.findById(10L)).thenReturn(Optional.of(o));
+
+        service.reject(5L, null);
+
+        assertThat(o.getEvents()).last().satisfies(e -> {
+            assertThat(e.getStatus()).isEqualTo(OrderStatus.DELIVERED);
+            assertThat(e.getNote()).isEqualTo("Return rejected");
+        });
     }
 }

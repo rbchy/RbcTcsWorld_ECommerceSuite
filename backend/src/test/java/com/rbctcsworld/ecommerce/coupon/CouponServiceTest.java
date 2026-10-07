@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -107,7 +108,7 @@ class CouponServiceTest {
         when(coupons.incrementUsage(1L)).thenReturn(0);
 
         assertThatThrownBy(() -> service.redeem(c, 9L, 100L))
-                .isInstanceOf(ConflictException.class).hasMessageContaining("usage limit");
+                .isInstanceOf(ConflictException.class).hasMessage("Coupon usage limit reached: LIMITED");
         verify(redemptions, never()).save(any());
     }
 
@@ -125,5 +126,84 @@ class CouponServiceTest {
         assertThatThrownBy(() -> service.create(new CouponDtos.CreateCouponRequest(
                 "big", Coupon.PERCENT, new BigDecimal("150"), null, null, null, null)))
                 .isInstanceOf(BusinessRuleException.class);
+    }
+
+    // ---- added after mutation testing (PIT): the usage-limit boundary, a coupon without minimum amount,
+    // ---- and most of create() (duplicate code, the 100 % boundary, the date order) survived mutation.
+
+    private static CouponDtos.CreateCouponRequest request(String code, String type, String value,
+                                                          LocalDateTime from, LocalDateTime until) {
+        return new CouponDtos.CreateCouponRequest(code, type, new BigDecimal(value), null, 5, from, until);
+    }
+
+    @Test
+    void usageLimitIsReachedExactlyAtMaxUses() {
+        Coupon c = coupon("LIMIT2", Coupon.FIXED, "1.00", "0", 2, null, null);
+        when(coupons.findByCode("LIMIT2")).thenReturn(Optional.of(c));
+
+        ReflectionTestUtils.setField(c, "usedCount", 1);
+        assertThat(service.validate("LIMIT2", 9L, BigDecimal.TEN)).isSameAs(c);
+
+        ReflectionTestUtils.setField(c, "usedCount", 2);
+        assertThat(c.getUsedCount()).isEqualTo(2);
+        assertThatThrownBy(() -> service.validate("LIMIT2", 9L, BigDecimal.TEN))
+                .isInstanceOf(ConflictException.class).hasMessageContaining("usage limit");
+
+        Coupon unlimited = coupon("ANY", Coupon.FIXED, "1.00", "0", null, null, null);
+        ReflectionTestUtils.setField(unlimited, "usedCount", 10_000);
+        assertThat(unlimited.usageLimitReached()).as("no maxUses = unlimited").isFalse();
+    }
+
+    @Test
+    void couponWithoutMinimumAmountAcceptsAnyOrder() {
+        Coupon c = new Coupon("FREE1", Coupon.FIXED, new BigDecimal("1.00"), null, null, null, null);
+        ReflectionTestUtils.setField(c, "id", 1L);
+        when(coupons.findByCode("FREE1")).thenReturn(Optional.of(c));
+
+        assertThat(c.getMinOrderAmount()).isEqualByComparingTo("0");
+        assertThat(service.validate("free1", 9L, new BigDecimal("0.01"))).isSameAs(c);
+    }
+
+    @Test
+    void createStoresANormalisedCouponAndAllowsExactly100Percent() {
+        when(coupons.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Coupon c = service.create(request("  full-100 ", Coupon.PERCENT, "100", null, null));
+
+        assertThat(c.getCode()).isEqualTo("FULL-100");
+        assertThat(c.getType()).isEqualTo(Coupon.PERCENT);
+        assertThat(c.getDiscountValue()).isEqualByComparingTo("100");
+        assertThat(c.getMaxUses()).isEqualTo(5);
+        assertThat(c.getUsedCount()).isZero();
+        assertThatThrownBy(() -> service.create(request("p", Coupon.PERCENT, "100.01", null, null)))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("between 0 and 100");
+        assertThat(service.create(request("f", Coupon.FIXED, "150.00", null, null)).getDiscountValue())
+                .as("the 100 limit is for PERCENT only").isEqualByComparingTo("150.00");
+    }
+
+    @Test
+    void createRejectsDuplicateCodeAndEndBeforeStart() {
+        when(coupons.existsByCode(any())).thenAnswer(i -> "DUP".equals(i.getArgument(0)));
+        assertThatThrownBy(() -> service.create(request("dup", Coupon.FIXED, "1", null, null)))
+                .isInstanceOf(ConflictException.class).hasMessageContaining("already exists");
+        verify(coupons, never()).save(any());
+
+        assertThatThrownBy(() -> service.create(request("dates", Coupon.FIXED, "1", NOW, NOW.minusSeconds(1))))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("validUntil");
+
+        when(coupons.save(any())).thenAnswer(i -> i.getArgument(0));
+        assertThat(service.create(request("sameday", Coupon.FIXED, "1", NOW, NOW)).getValidUntil()).isEqualTo(NOW);
+        assertThat(service.create(request("open-end", Coupon.FIXED, "1", NOW, null)).getValidUntil()).isNull();
+        assertThat(service.create(request("open-start", Coupon.FIXED, "1", null, NOW)).getValidFrom()).isNull();
+    }
+
+    @Test
+    void listAndNormaliseHelpers() {
+        Coupon c = coupon("A", Coupon.FIXED, "1.00", "0", null, null, null);
+        when(coupons.findAllByOrderByIdAsc()).thenReturn(List.of(c));
+
+        assertThat(service.all()).containsExactly(c);
+        assertThat(CouponService.normalize(null)).isEmpty();
+        assertThat(CouponService.normalize(" ab-1 ")).isEqualTo("AB-1");
     }
 }

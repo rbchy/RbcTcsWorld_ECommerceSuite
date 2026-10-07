@@ -23,6 +23,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import com.rbctcsworld.ecommerce.cart.CartDtos.CartResponse;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -132,5 +134,38 @@ class WishlistServiceTest {
 
     private static LocalDateTime now() {
         return LocalDateTime.now(CLOCK);
+    }
+
+    // ---- added after mutation testing (PIT): "available" was only ever asserted false, and the responses of
+    // ---- get() and moveToCart() were not checked, so returning null went unnoticed.
+
+    @Test
+    void lastUnitInStockIsAvailable() {
+        WishlistItem item = new WishlistItem(7L, product, now());
+        product.setStock(1);
+        assertThat(WishlistService.toLine(item).available()).isTrue();
+    }
+
+    @Test
+    void wishlistShowsEveryLineAndItsCount() {
+        when(items.findByUserIdOrderByIdDesc(7L)).thenReturn(List.of(new WishlistItem(7L, product, now())));
+
+        var wishlist = service.get(EMAIL);
+
+        assertThat(wishlist.count()).isEqualTo(1);
+        assertThat(wishlist.items()).singleElement().satisfies(l -> {
+            assertThat(l.sku()).isEqualTo("SKU-L");
+            assertThat(l.available()).isTrue();
+        });
+    }
+
+    @Test
+    void moveToCartReturnsTheUpdatedCart() {
+        WishlistItem item = new WishlistItem(7L, product, now());
+        when(items.findByUserIdAndProductId(7L, 1L)).thenReturn(Optional.of(item));
+        CartResponse cartAfter = new CartResponse(List.of(), 1, new BigDecimal("40.00"));
+        when(cart.addItem(EMAIL, 1L, 1)).thenReturn(cartAfter);
+
+        assertThat(service.moveToCart(EMAIL, 1L)).isSameAs(cartAfter);
     }
 }

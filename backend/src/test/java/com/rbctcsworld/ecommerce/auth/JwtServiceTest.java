@@ -86,4 +86,14 @@ class JwtServiceTest {
         assertThatCode(() -> new JwtService(JwtService.DEV_DEFAULT_SECRET, 60_000, new MockEnvironment()))
                 .as("allowed for local development").doesNotThrowAnyException();
     }
+
+    @Test
+    void secretOfExactly32BytesIsTheMinimum() {  // added after PIT: the "< 32" boundary and the null check survived
+        assertThatCode(() -> new JwtService("x".repeat(32), 60_000, new MockEnvironment())).doesNotThrowAnyException();
+        assertThatThrownBy(() -> new JwtService("x".repeat(31), 60_000, new MockEnvironment()))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("32 bytes");
+        assertThatThrownBy(() -> new JwtService(null, 60_000, new MockEnvironment()))
+                .as("missing secret: a clear start-up error, not a NullPointerException")
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("32 bytes");
+    }
 }

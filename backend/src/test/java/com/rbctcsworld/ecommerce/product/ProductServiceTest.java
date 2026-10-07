@@ -139,4 +139,28 @@ class ProductServiceTest {
         assertThat(sort.getOrderFor("name").isIgnoreCase()).isTrue();
         assertThat(sort.getOrderFor("id")).isNotNull();
     }
+
+    @Test
+    void smallestPageSizeAndBlankSortAreAcceptedAndThePageIsReturned() {  // added after PIT: size=1 and a blank sort were untested
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        Page<Product> one = new PageImpl<>(List.of(product(1L, "A")));
+        when(repo.findByActiveTrue(captor.capture())).thenReturn(one);
+
+        assertThat(service.page(null, 0, 1, "   ")).isSameAs(one);
+        assertThat(captor.getValue().getPageSize()).isEqualTo(1);
+        assertThat(captor.getValue().getSort()).containsExactly(Sort.Order.asc("id"));
+    }
+
+    @Test
+    void productMayKeepItsOwnSkuOnUpdate() {  // added after PIT: "SKU used by ANOTHER product" was only tested from one side
+        Product existing = product(1L, "SKU-1");
+        when(repo.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(existing));
+        when(repo.findBySku("SKU-1")).thenReturn(Optional.of(existing));
+        when(repo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Product updated = service.update(1L, new ProductRequest("New name", " SKU-1 ", "tools", new BigDecimal("12.00"), 3));
+
+        assertThat(updated.getName()).isEqualTo("New name");
+        assertThat(updated.getSku()).isEqualTo("SKU-1");
+    }
 }

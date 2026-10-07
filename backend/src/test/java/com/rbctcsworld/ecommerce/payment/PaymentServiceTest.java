@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -93,5 +94,22 @@ class PaymentServiceTest {
     @Test
     void payRequestNeverPrintsCardData() {
         assertThat(card("4242424242424242", 12, 2030).toString()).doesNotContain("4242").doesNotContain("123");
+    }
+
+    // added after mutation testing (PIT): only the too-short side was tested, so "13" and "19" could be
+    // changed to "14" and "18" without any test noticing. All numbers below pass the Luhn check.
+    @ParameterizedTest(name = "{0}-digit card -> accepted: {1}")
+    @CsvSource({"12, 400000000002, false", "13, 4000000000006, true",
+                "19, 4000000000000000006, true", "20, 40000000000000000002, false"})
+    void cardNumberLengthMustBe13To19Digits(int length, String number, boolean accepted) {
+        assertThat(number).hasSize(length);
+        assertThat(MockPaymentGateway.luhnValid(number)).isTrue();
+        if (accepted) {
+            when(transactions.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            assertThat(service.charge(1L, AMOUNT, card(number, 12, 2030)).getStatus()).isEqualTo(PaymentTransaction.SUCCEEDED);
+        } else {
+            assertThatThrownBy(() -> service.charge(1L, AMOUNT, card(number, 12, 2030)))
+                    .isInstanceOf(BusinessRuleException.class).hasMessage("Invalid card number");
+        }
     }
 }

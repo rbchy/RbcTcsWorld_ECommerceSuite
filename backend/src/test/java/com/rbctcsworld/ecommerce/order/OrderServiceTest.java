@@ -26,6 +26,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import com.rbctcsworld.ecommerce.coupon.Coupon;
+import com.rbctcsworld.ecommerce.payment.PaymentDtos.PayRequest;
+import org.mockito.ArgumentCaptor;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,6 +43,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -111,7 +116,7 @@ class OrderServiceTest {
         doThrow(new ConflictException("Insufficient stock")).when(inventory).reserve(eq(mouse), anyInt(), any());
 
         assertThatThrownBy(() -> service.placeOrder(EMAIL, null)).isInstanceOf(ConflictException.class);
-        verify(cartItems, never()).deleteByUserId(anyLong());
+        verify(cartItems, never()).deleteByUserId(any());
     }
 
     @Test
@@ -141,7 +146,7 @@ class OrderServiceTest {
         assertThatThrownBy(() -> service.cancel(EMAIL, 55L))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("CANCELLED");
-        verify(inventory, never()).release(anyLong(), anyInt(), any());
+        verify(inventory, never()).release(any(), anyInt(), any());
     }
 
     @Test
@@ -168,7 +173,7 @@ class OrderServiceTest {
 
         service.cancel(EMAIL, 55L);
 
-        verify(payments, never()).refund(anyLong(), any());
+        verify(payments, never()).refund(any(), any());
     }
 
     @Test
@@ -180,7 +185,9 @@ class OrderServiceTest {
 
         assertThatThrownBy(() -> service.pay(EMAIL, 55L, null))
                 .isInstanceOf(ConflictException.class).hasMessageContaining("PAID");
-        verify(payments, never()).charge(anyLong(), any(), any());
+        // Found by mutation testing (PIT): this line used anyLong(), which does NOT match null (the order has no
+        // id here), so it passed even when the card WAS charged. any() matches null too.
+        verify(payments, never()).charge(any(), any(), any());
     }
 
     @Test
@@ -195,5 +202,66 @@ class OrderServiceTest {
     void orderNumbersAreUniqueAndReadable() {
         assertThat(OrderService.newOrderNumber()).matches("ORD-\\d{8}-[A-HJ-NP-Z2-9]{6}").hasSize(19);
         assertThat(OrderService.newOrderNumber()).isNotEqualTo(OrderService.newOrderNumber());
+    }
+
+    // ---- added after mutation testing (PIT): the coupon path of placeOrder, a successful payment and the
+    // ---- order -> item link were never checked by a unit test.
+
+    @Test
+    void blankCouponCodeMeansNoCoupon() {
+        when(cartItems.findByUserIdOrderByIdAsc(7L)).thenReturn(List.of(new CartItem(7L, mouse, 1)));
+
+        OrderResponse r = service.placeOrder(EMAIL, "   ");
+
+        assertThat(r.couponCode()).isNull();
+        assertThat(r.discount()).isEqualByComparingTo("0.00");
+        assertThat(r.customerId()).isEqualTo(7L);
+        verifyNoInteractions(coupons);
+    }
+
+    @Test
+    void couponIsValidatedAppliedBeforeShippingAndRedeemed() {
+        when(cartItems.findByUserIdOrderByIdAsc(7L)).thenReturn(List.of(new CartItem(7L, keyboard, 1)));
+        Coupon save10 = new Coupon("SAVE10", Coupon.PERCENT, new BigDecimal("10"), null, null, null, null);
+        when(coupons.validate(eq("save10"), eq(7L), any())).thenReturn(save10);
+
+        OrderResponse r = service.placeOrder(EMAIL, "save10");
+
+        assertThat(r.couponCode()).isEqualTo("SAVE10");
+        assertThat(r.discount()).isEqualByComparingTo("5.00");
+        // 50.00 - 5.00 = 45.00 is below the 50.00 free-shipping threshold: 45.00 + 5.99 + 6% tax 2.70
+        assertThat(r.shippingFee()).isEqualByComparingTo("5.99");
+        assertThat(r.total()).isEqualByComparingTo("53.69");
+        verify(coupons).redeem(eq(save10), eq(7L), any());
+    }
+
+    @Test
+    void everyOrderLineIsLinkedToItsOrder() {
+        when(cartItems.findByUserIdOrderByIdAsc(7L)).thenReturn(List.of(new CartItem(7L, mouse, 1)));
+        ArgumentCaptor<CustomerOrder> saved = ArgumentCaptor.forClass(CustomerOrder.class);
+
+        service.placeOrder(EMAIL, null);
+
+        verify(orders).save(saved.capture());
+        assertThat(saved.getValue().getItems()).allSatisfy(item ->
+                assertThat(ReflectionTestUtils.getField(item, "order")).as("JPA back-reference").isSameAs(saved.getValue()));
+    }
+
+    @Test
+    void successfulPaymentChargesTheTotalAndMarksThePaidTime() {
+        CustomerOrder order = new CustomerOrder("ORD-1", 7L);
+        ReflectionTestUtils.setField(order, "id", 55L);
+        ReflectionTestUtils.setField(order, "createdAt", LocalDateTime.of(2026, 10, 1, 9, 30));
+        order.addItem(new OrderItem(1L, "SKU-M", "M", new BigDecimal("20.00"), 1));
+        order.applyPricing(BigDecimal.ZERO, new BigDecimal("5.99"), new BigDecimal("1.20"), new BigDecimal("27.19"), null);
+        when(orders.findByIdAndUserId(55L, 7L)).thenReturn(Optional.of(order));
+        PayRequest card = new PayRequest("4242424242424242", 12, 2030, "123");
+
+        OrderResponse r = service.pay(EMAIL, 55L, card);
+
+        verify(payments).charge(55L, new BigDecimal("27.19"), card);
+        assertThat(r.status()).isEqualTo(OrderStatus.PAID);
+        assertThat(r.paidAt()).isNotNull();
+        assertThat(r.createdAt()).isEqualTo(LocalDateTime.of(2026, 10, 1, 9, 30));
     }
 }

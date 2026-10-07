@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import org.mockito.InOrder;
+import com.rbctcsworld.ecommerce.review.ReviewDtos.ProductReviews;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -38,6 +40,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.inOrder;
 
 @ExtendWith(MockitoExtension.class)
 class ReviewServiceTest {
@@ -148,7 +151,7 @@ class ReviewServiceTest {
     void editingSomeoneElsesReviewLooksLikeNotFound() {
         when(reviews.findByIdAndUserId(99L, 7L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> service.update(EMAIL, 99L, 1, null, null)).isInstanceOf(NotFoundException.class);
-        verify(products, never()).lockById(anyLong());
+        verify(products, never()).lockById(any());
     }
 
     @Test
@@ -175,7 +178,13 @@ class ReviewServiceTest {
 
         service.delete(EMAIL, 3L);
 
-        verify(reviews).delete(r);
+        // added after PIT: removing flush() survived. The new average must be computed AFTER the delete reached
+        // the database, otherwise the deleted review is still counted.
+        InOrder seq = inOrder(reviews, products);
+        seq.verify(reviews).delete(r);
+        seq.verify(reviews).flush();
+        seq.verify(reviews).ratingHistogram(1L);
+        seq.verify(products).save(product);
         assertThat(product.getRatingAverage()).isEqualByComparingTo("0.0");
         assertThat(product.getRatingCount()).isZero();
     }
@@ -201,5 +210,51 @@ class ReviewServiceTest {
         List<Object[]> rows = new ArrayList<>();
         for (int s = 1; s <= 5; s++) if (counts[s] > 0) rows.add(new Object[]{s, counts[s]});
         return rows;
+    }
+
+    // ---- added after mutation testing (PIT): the public product page (default sort, reviewer names) and the
+    // ---- defaults for an empty sort / status / e-mail had no unit test.
+
+    private Review published(long id, long userId, int rating, int daysAgo) {
+        Review r = new Review(1L, userId, rating, "t" + id, null, java.time.LocalDateTime.now(CLOCK).minusDays(daysAgo));
+        ReflectionTestUtils.setField(r, "id", id);
+        return r;
+    }
+
+    @Test
+    void productPageShowsNewestFirstByDefaultWithMaskedNames() {
+        AppUser jane = new AppUser("jane.doe@test.com", "x");
+        ReflectionTestUtils.setField(jane, "id", 21L);
+        AppUser bob = new AppUser("bob@test.com", "x");
+        ReflectionTestUtils.setField(bob, "id", 22L);
+        when(products.findByIdAndActiveTrue(1L)).thenReturn(Optional.of(product));
+        when(reviews.findByProductIdAndStatus(1L, Review.PUBLISHED))
+                .thenReturn(List.of(published(1, 21L, 5, 3), published(2, 22L, 2, 1)));
+        when(users.findAllById(any())).thenReturn(List.of(jane, bob));
+        when(reviews.ratingHistogram(1L)).thenReturn(histogram("5 2"));
+
+        for (String defaultSort : new String[] {null, "  "}) {
+            ProductReviews page = service.forProduct(1L, defaultSort);
+            assertThat(page.reviews()).extracting(ReviewResponse::id).containsExactly(2L, 1L);   // newest first
+            assertThat(page.reviews()).extracting(ReviewResponse::reviewer).containsExactly("bo***", "ja***");
+            assertThat(page.averageRating()).isEqualByComparingTo("3.5");
+            assertThat(page.reviewCount()).isEqualTo(2);
+        }
+        assertThat(service.forProduct(1L, "HIGHEST").reviews()).extracting(ReviewResponse::rating).containsExactly(5, 2);
+    }
+
+    @Test
+    void emptyModerationFilterListsEveryReview() {
+        when(reviews.findAllByOrderByIdDesc()).thenReturn(List.of());
+
+        assertThat(service.adminList(null)).isEmpty();
+        assertThat(service.adminList(" ")).isEmpty();
+        verify(reviews, org.mockito.Mockito.times(2)).findAllByOrderByIdDesc();
+    }
+
+    @ParameterizedTest(name = "\"{0}\" -> {1}")
+    @CsvSource(value = {"NULL, Customer", "'   ', Customer", "noatsign, no***"}, nullValues = "NULL")
+    void reviewerNameFallbacks(String email, String expected) {
+        assertThat(ReviewService.mask(email)).isEqualTo(expected);
     }
 }
