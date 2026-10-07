@@ -12,7 +12,7 @@ for i, l in enumerate(lines):
         continue
     req = l.split("Unhandled error on", 1)[1].strip()
     block = lines[i + 1:i + 60]
-    exc = block[0].strip() if block else "?"
+    exc = next((b.strip() for b in block if b.strip() and not b.strip().startswith(("at ", "..."))), "?")
     frames = [b.strip() for b in block[1:] if b.strip().startswith("at ")][:4]
     causes = [b.strip() for b in block if b.strip().startswith("Caused by:")]
     key = exc.split(":")[0]
