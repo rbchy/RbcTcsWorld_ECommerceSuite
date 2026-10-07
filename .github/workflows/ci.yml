@@ -287,6 +287,7 @@ jobs:
     # Pages must be enabled once (Settings > Pages > Source: GitHub Actions); until then this job
     # fails without turning the whole CI run red.
     continue-on-error: true
+    concurrency: { group: github-pages, cancel-in-progress: false }   # one deployment at a time
     permissions:
       pages: write
       id-token: write

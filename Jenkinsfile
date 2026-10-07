@@ -3,7 +3,8 @@
 //
 // Agent needs: JDK 21, Maven, Docker with compose v2, python3, jq, Google Chrome (UI tests), curl.
 // k6 is used when installed (brew install k6); otherwise the grafana/k6 image is used.
-// Plugins: Pipeline, Git, JUnit, Timestamper (all in Jenkins' "suggested plugins").
+// Plugins: Pipeline, Git, JUnit, Timestamper (all in Jenkins' "suggested plugins") + HTML Publisher
+// (optional: the "QA Reports" page with every report of the build; without it the reports are only archived).
 // The syntax of this file is validated in GitHub Actions by a real Jenkins (job "Jenkinsfile lint").
 
 pipeline {
@@ -18,6 +19,7 @@ pipeline {
 
     parameters {
         booleanParam(name: 'RUN_UI', defaultValue: true, description: 'Selenium UI tests (needs Chrome on the agent)')
+        booleanParam(name: 'RUN_MUTATION', defaultValue: true, description: 'PIT mutation testing of the business logic (about 4 minutes)')
         booleanParam(name: 'RUN_SECURITY', defaultValue: true, description: 'OSV dependency scan + OWASP ZAP API scan')
         choice(name: 'K6_EXTRA', choices: ['none', 'load', 'stress', 'spike', 'soak'], description: 'Extra (long) k6 test after the gates')
     }
@@ -58,6 +60,19 @@ pipeline {
                     junit allowEmptyResults: true, testResults: 'backend/target/surefire-reports/*.xml'
                     sh '.github/scripts/coverage-summary.sh backend/target/site/jacoco/jacoco.csv || true'
                     archiveArtifacts allowEmptyArchive: true, artifacts: 'backend/target/site/jacoco/**'
+                }
+            }
+        }
+
+        stage('Mutation testing (PIT)') {
+            when { expression { params.RUN_MUTATION } }
+            steps {
+                sh 'mvn -B -f backend/pom.xml -Pmutation -Djacoco.skip=true test-compile org.pitest:pitest-maven:mutationCoverage'
+            }
+            post {
+                always {
+                    sh '.github/scripts/mutation-summary.sh backend/target/pit-reports/mutations.xml 0 || true'
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'backend/target/pit-reports/**'
                 }
             }
         }
@@ -149,6 +164,18 @@ pipeline {
             sh "${COMPOSE} logs --no-color --tail=100 || true"
         }
         always {
+            // ONE page with every report of this build: numbers of all gates + links to Allure, Cucumber, JaCoCo,
+            // PIT, k6 and ZAP. Shown as "QA Reports" on the build page (HTML Publisher plugin).
+            sh 'python3 ci/qa_dashboard.py qa-reports || true'
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'qa-reports/**'
+            script {
+                try {
+                    publishHTML(target: [reportDir: 'qa-reports', reportFiles: 'index.html', reportName: 'QA Reports',
+                                         keepAll: true, alwaysLinkToLastBuild: true, allowMissing: true])
+                } catch (NoSuchMethodError ignored) {
+                    echo 'Install the "HTML Publisher" plugin to get the QA Reports page (reports are archived anyway).'
+                }
+            }
             sh "${COMPOSE} down -v --remove-orphans || true"
         }
         success {

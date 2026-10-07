@@ -31,9 +31,21 @@ print("::notice title=Weakest classes (mutation score)::" + " | ".join(
 print("\nclass                        score   killed/total  survived  no-coverage")
 for p, cls, d, t, s, nc in sorted(rows, key=lambda r: r[1]):
     print(f"{cls:28s} {p:5.1f}%   {d:4d}/{t:<4d}      {s:4d}      {nc:4d}")
-# the full list in one annotation (multi-line), so it can be read on the run page without the log
-print("::notice title=All surviving mutants (" + str(len(survivors)) + ")::" + "%0A".join(
-    f"{st} {cls}.{meth}():{line} {desc}" for st, cls, meth, line, desc in sorted(survivors, key=lambda x: (x[1], int(x[3])))))
+# the surviving mutants in one annotation (GitHub keeps ~4 KB per annotation: short descriptions),
+# and the not-covered ones counted per method (those are executed by integration tests, not unit tests)
+def short(d):
+    for a, b in (("removed conditional - replaced equality check with false", "if(==) forced false"),
+                 ("removed conditional - replaced equality check with true", "if(==) forced true"),
+                 ("removed conditional - replaced comparison check with false", "if(<,>) forced false"),
+                 ("removed conditional - replaced comparison check with true", "if(<,>) forced true"),
+                 ("changed conditional boundary", "boundary < to <="), ("negated conditional", "negated if"),
+                 ("replaced return value with", "return"), ("removed call to ", "no call "), ("com/rbctcsworld/ecommerce/", "")):
+        d = d.replace(a, b)
+    return d.split(" for ")[0]
+surv = sorted([x for x in survivors if x[0] == "SURVIVED"], key=lambda x: (x[1], int(x[3])))
+print(f"::notice title=Survived ({len(surv)})::" + "%0A".join(f"{c}.{m}:{l} {short(d)}" for _, c, m, l, d in surv))
+nc = collections.Counter(f"{c}.{m}" for st, c, m, l, d in survivors if st == "NO_COVERAGE")
+print(f"::notice title=Not covered by unit tests ({sum(nc.values())})::" + ", ".join(f"{k} x{v}" for k, v in sorted(nc.items())))
 limit = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2] else 15
 print(f"\nSurviving mutants ({len(survivors)}):")
 for i, (st, cls, meth, line, desc) in enumerate(sorted(survivors, key=lambda x: (x[1], int(x[3])))):
