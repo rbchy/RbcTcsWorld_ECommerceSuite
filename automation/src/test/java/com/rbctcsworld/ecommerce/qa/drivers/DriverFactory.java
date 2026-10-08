@@ -12,7 +12,7 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** Creates the browser from -Dbrowser=chrome|firefox|edge and -Dheadless=true|false. Selenium Manager downloads drivers. */
+/** Creates the browser from -Dbrowser=chrome|firefox|edge|safari and -Dheadless=true|false. Selenium Manager downloads drivers. */
 public final class DriverFactory {
 
     /*
@@ -31,17 +31,32 @@ public final class DriverFactory {
     private DriverFactory() {
     }
 
+    /*
+     * Same viewport (1366x900) in every browser, set by a START argument: resizing a running headless Edge window
+     * timed out once in CI (setCurrentWindowSize), so a resize after start is used only for Safari.
+     */
     public static WebDriver create() {
         boolean headless = TestConfig.headless();
         return switch (TestConfig.browser().toLowerCase()) {
             case "firefox" -> {
                 FirefoxOptions o = new FirefoxOptions();
                 if (headless) o.addArguments("-headless");
+                o.addArguments("--width=1366", "--height=900");
                 yield new FirefoxDriver(o);
+            }
+            // Safari (macOS only): no headless mode; enable once with "sudo safaridriver --enable"
+            case "safari" -> {
+                WebDriver safari = new org.openqa.selenium.safari.SafariDriver();
+                safari.manage().window().setSize(new org.openqa.selenium.Dimension(1366, 900));
+                yield safari;
             }
             case "edge" -> {
                 EdgeOptions o = new EdgeOptions();
                 if (headless) o.addArguments("--headless=new");
+                o.addArguments("--window-size=1366,900");
+                // DEF-019: on the Ubuntu 24.04 CI runners AppArmor blocks Edge's sandbox (Chrome ships an AppArmor
+                // profile, Edge does not), so Edge exits at start. Only in CI, never on a developer machine.
+                if (System.getenv("CI") != null) o.addArguments("--no-sandbox", "--disable-dev-shm-usage");
                 yield new EdgeDriver(o);
             }
             default -> {

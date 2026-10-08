@@ -18,7 +18,8 @@ pipeline {
     }
 
     parameters {
-        booleanParam(name: 'RUN_UI', defaultValue: true, description: 'Selenium UI tests (needs Chrome on the agent)')
+        booleanParam(name: 'RUN_UI', defaultValue: true, description: 'Selenium UI tests')
+        choice(name: 'BROWSER', choices: ['chrome', 'firefox', 'edge', 'safari'], description: 'Browser for the UI and accessibility tests (must be installed on the agent; Safari: run "sudo safaridriver --enable" once)')
         booleanParam(name: 'RUN_MUTATION', defaultValue: true, description: 'PIT mutation testing of the business logic (about 4 minutes)')
         booleanParam(name: 'RUN_SECURITY', defaultValue: true, description: 'OSV dependency scan + API contract gate + OWASP ZAP API scan')
         choice(name: 'K6_EXTRA', choices: ['none', 'load', 'stress', 'spike', 'soak'], description: 'Extra (long) k6 test after the gates')
@@ -89,7 +90,7 @@ pipeline {
             steps {
                 script {
                     def filter = params.RUN_UI ? '' : '-DexcludedGroups=ui'
-                    sh "mvn -B -f automation/pom.xml clean test ${filter} -DbaseUrl=${BASE_URL} -DuiUrl=${UI_URL} -Dheadless=true"
+                    sh "mvn -B -f automation/pom.xml clean test ${filter} -DbaseUrl=${BASE_URL} -DuiUrl=${UI_URL} -Dheadless=true -Dbrowser=${params.BROWSER}"
                 }
             }
             post {
