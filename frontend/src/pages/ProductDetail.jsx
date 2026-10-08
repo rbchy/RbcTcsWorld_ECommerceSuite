@@ -67,7 +67,7 @@ export default function ProductDetail({ id }) {
         <div>
           <div className="row between">
             <h2>{data.reviewCount} review(s)</h2>
-            <select data-testid="review-sort" value={sort} onChange={e => setSort(e.target.value)}>
+            <select data-testid="review-sort" aria-label="Sort reviews" value={sort} onChange={e => setSort(e.target.value)}>
               <option value="newest">Newest</option>
               <option value="highest">Highest rating</option>
               <option value="lowest">Lowest rating</option>

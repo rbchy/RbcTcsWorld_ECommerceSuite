@@ -31,6 +31,7 @@
     <jackson.version>2.21.7</jackson.version>
     <postgresql.version>42.7.13</postgresql.version>
     <allure.version>2.29.1</allure.version>
+    <axe.version>4.11.3</axe.version>
     <allure.report.version>2.29.0</allure.report.version>
     <!-- shown on the Allure "Environment" widget; override with -DbaseUrl=... -->
     <baseUrl>http://localhost:8081</baseUrl>
@@ -52,11 +53,15 @@
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>${junit.version}</version><scope>test</scope></dependency>
     <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-suite</artifactId><version>${junit.platform.version}</version><scope>test</scope></dependency>
     <dependency><groupId>io.rest-assured</groupId><artifactId>rest-assured</artifactId><version>${restassured.version}</version><scope>test</scope></dependency>
+    <!-- API contract tests: responses validated against JSON Schemas in src/test/resources/contracts -->
+    <dependency><groupId>io.rest-assured</groupId><artifactId>json-schema-validator</artifactId><version>${restassured.version}</version><scope>test</scope></dependency>
     <!-- lets REST Assured serialize Map/record request bodies to JSON -->
     <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId><version>${jackson.version}</version><scope>test</scope></dependency>
     <!-- JDBC driver for database validation tests (@Tag("db")) -->
     <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><version>${postgresql.version}</version><scope>test</scope></dependency>
     <dependency><groupId>org.seleniumhq.selenium</groupId><artifactId>selenium-java</artifactId><version>${selenium.version}</version><scope>test</scope></dependency>
+    <!-- Accessibility: Deque axe-core rules (WCAG 2.1 A/AA) run inside the Selenium browser -->
+    <dependency><groupId>com.deque.html.axe-core</groupId><artifactId>selenium</artifactId><version>${axe.version}</version><scope>test</scope></dependency>
     <dependency><groupId>io.cucumber</groupId><artifactId>cucumber-java</artifactId><version>${cucumber.version}</version><scope>test</scope></dependency>
     <dependency><groupId>io.cucumber</groupId><artifactId>cucumber-junit-platform-engine</artifactId><version>${cucumber.version}</version><scope>test</scope></dependency>
     <!-- dependency injection: share ScenarioContext between step classes -->

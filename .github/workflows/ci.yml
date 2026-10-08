@@ -255,6 +255,8 @@ jobs:
           for i in $(seq 1 60); do curl -sf http://localhost:8081/actuator/health && break; sleep 2; done
           curl -sf http://localhost:8081/v3/api-docs -o security/zap/openapi.json
           jq '.paths | keys | length' security/zap/openapi.json
+      - name: API contract - no breaking change against the approved OpenAPI baseline
+        run: .github/scripts/openapi-breaking-changes.sh docs/api/openapi.json security/zap/openapi.json
       - name: OWASP ZAP API scan (logged in as a customer)
         run: |
           TOKEN=$(curl -sf -X POST http://localhost:8081/api/auth/register -H 'Content-Type: application/json' \

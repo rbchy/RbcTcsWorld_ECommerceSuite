@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Cart",
+  "description": "GET/POST/PUT/DELETE /api/cart...",
+  "type": "object",
+  "required": [
+    "items",
+    "totalQuantity",
+    "subtotal"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "itemId",
+          "productId",
+          "sku",
+          "name",
+          "unitPrice",
+          "quantity",
+          "lineTotal",
+          "available"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "itemId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "productId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sku": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "number",
+            "minimum": 0
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "lineTotal": {
+            "type": "number",
+            "minimum": 0
+          },
+          "available": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "totalQuantity": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "subtotal": {
+      "type": "number",
+      "minimum": 0
+    }
+  }
+}

@@ -111,7 +111,7 @@ function ReturnForm({ onSubmit }) {
   return (
     <div data-testid="return-form">
       <h2>Return this order</h2>
-      <select data-testid="return-reason" value={reason} onChange={e => setReason(e.target.value)}>
+      <select data-testid="return-reason" aria-label="Reason for the return" value={reason} onChange={e => setReason(e.target.value)}>
         <option value="WRONG_ITEM">Wrong item</option>
         <option value="DAMAGED">Damaged</option>
         <option value="NOT_AS_DESCRIBED">Not as described</option>

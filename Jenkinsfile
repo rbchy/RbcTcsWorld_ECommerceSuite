@@ -20,7 +20,7 @@ pipeline {
     parameters {
         booleanParam(name: 'RUN_UI', defaultValue: true, description: 'Selenium UI tests (needs Chrome on the agent)')
         booleanParam(name: 'RUN_MUTATION', defaultValue: true, description: 'PIT mutation testing of the business logic (about 4 minutes)')
-        booleanParam(name: 'RUN_SECURITY', defaultValue: true, description: 'OSV dependency scan + OWASP ZAP API scan')
+        booleanParam(name: 'RUN_SECURITY', defaultValue: true, description: 'OSV dependency scan + API contract gate + OWASP ZAP API scan')
         choice(name: 'K6_EXTRA', choices: ['none', 'load', 'stress', 'spike', 'soak'], description: 'Extra (long) k6 test after the gates')
     }
 
@@ -115,7 +115,7 @@ pipeline {
             }
         }
 
-        stage('Security: dependencies + OWASP ZAP') {
+        stage('Security: dependencies + API contract + OWASP ZAP') {
             when { expression { params.RUN_SECURITY } }
             steps {
                 sh '''
@@ -123,6 +123,10 @@ pipeline {
                     docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:v2.3.0 \
                         scan source --recursive --format json --output /src/osv-results.json /src || true
                     security/osv-summary.sh osv-results.json
+
+                    # API contract (provider side): no breaking change against the approved OpenAPI baseline
+                    curl -fsS "$BASE_URL/v3/api-docs" -o security/zap/openapi.json
+                    .github/scripts/openapi-breaking-changes.sh docs/api/openapi.json security/zap/openapi.json
 
                     # OWASP ZAP API scan from the OpenAPI spec, logged in as a customer, inside the compose network
                     TOKEN=$(curl -fsS -X POST "$BASE_URL/api/auth/register" -H 'Content-Type: application/json' \

@@ -136,7 +136,11 @@ def card(title, ok, big, lines, refs=()):
 
 for title, t, ref in (("Backend unit + integration", be, [("JaCoCo coverage", links["coverage"])]),
                       ("Automation: API, DB, BDD, UI", au, [("Allure report", links["allure"]),
-                                                            ("Cucumber report", links["cucumber"])])):
+                                                            ("Cucumber report", links["cucumber"])]),
+                      ("API contract (JSON Schema)", junit("automation/target/surefire-reports/TEST-*ApiContractTest.xml"),
+                       [("Allure report", links["allure"])]),
+                      ("Accessibility (WCAG 2.1 AA)", junit("automation/target/surefire-reports/TEST-*AccessibilityTest.xml"),
+                       [("Allure report", links["allure"])])):
     if t:
         bad = t["failures"] + t["errors"]
         card(title, bad == 0, f"{t['tests'] - bad - t['skipped']}/{t['tests']}",

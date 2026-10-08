@@ -62,7 +62,7 @@ export default function Home() {
     <>
       <header className="page-head">
         <h1>RbcTcsWorld E-Commerce</h1>
-        <input data-testid="search-input" placeholder="Search products" value={q} onChange={e => setQ(e.target.value)} />
+        <input data-testid="search-input" type="search" aria-label="Search products" placeholder="Search products" value={q} onChange={e => setQ(e.target.value)} />
       </header>
       {error && <p data-testid="error-banner" className="error">{error}</p>}
       {flash && <p data-testid="flash" className="ok">{flash}</p>}
@@ -87,7 +87,7 @@ function ProductCard({ p, onAdd, onWish }) {
       <p><strong data-testid="product-price">{money(p.price)}</strong></p>
       <p className="muted" data-testid="product-stock">Stock: {p.stock}</p>
       <div className="row">
-        <input type="number" min="1" max="10" value={qty} data-testid="qty-input"
+        <input type="number" min="1" max="10" value={qty} data-testid="qty-input" aria-label={`Quantity of ${p.name}`}
                onChange={e => setQty(e.target.value)} className="qty" />
         <button data-testid="add-to-cart" disabled={p.stock < 1} onClick={() => onAdd(p.id, qty)}>
           {p.stock < 1 ? 'Out of stock' : 'Add to cart'}
