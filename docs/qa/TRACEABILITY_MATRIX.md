@@ -105,12 +105,15 @@ Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured
 | NFR-PERF-01 | At 50 users: read p95 < 500 ms, write p95 < 1000 ms, purchase journey p95 < 3 s, errors < 1 %, checks > 99 % | k6 `performance/tests/smoke.js` (every build), k6 `performance/tests/load.js` | P | Pass (load p95 4 ms CI, 20 ms Mac) |
 | NFR-PERF-02 | Correct under a rush: exactly STOCK orders succeed, no 5xx, stock ends at 0 | k6 `performance/tests/flash-sale.js`, `InventoryConcurrencyTest#flashSale` | P A | Pass (300 buyers / 50 units) |
 | NFR-SEC-01 | Security headers on every response; no CORS for foreign origins; no stack traces; actuator shows health only | `SecurityIntegrationTest#securityHeadersOnPublicAndErrorResponses`, `SecurityIntegrationTest#foreignWebsitesGetNoCorsPermission`, `SecurityIntegrationTest#unexpectedErrorsDoNotLeakInternals`, `SecurityIntegrationTest#onlyTheHealthEndpointOfActuatorIsReachable`, `InputAndExposureTest#securityHeaders`, `InputAndExposureTest#noCorsForForeignOrigins`, `InputAndExposureTest#cleanErrors`, `InputAndExposureTest#healthWithoutDetails` | I A S | Pass |
-| NFR-SEC-02 | Injection and malformed input never succeed and never cause 5xx | `InputAndExposureTest#sqlInjectionInSearch`, `InputAndExposureTest#sqlInjectionInLogin`, `InputAndExposureTest#oddPaths`, `InputAndExposureTest#oversizedInput`, `InputAndExposureTest#badBodies`, OWASP ZAP API scan | A S | Pass (ZAP: 0 medium/high) |
-| NFR-SEC-03 | No shipped library with an unaccepted critical vulnerability; every accepted one has a reason, a guard test and an expiry | OSV-Scanner gate in CI, `SecurityIntegrationTest#noXsltViewRenderingIsConfigured_CVE_2026_47884` | I S | Pass (0 open; 1 accepted until 2026-11-05) |
+| NFR-SEC-02 | Injection and malformed input never succeed and never cause 5xx | `InputAndExposureTest#sqlInjectionInSearch`, `InputAndExposureTest#sqlInjectionInLogin`, `InputAndExposureTest#oddPaths`, `InputAndExposureTest#oversizedInput`, `InputAndExposureTest#badBodies`, `InputAndExposureTest#malformedQueryStrings`, OWASP ZAP API scan | A S | Pass (ZAP: 0 medium/high) |
+| NFR-SEC-03 | No shipped library with an unaccepted critical vulnerability; every accepted one has a reason, a guard test and an expiry | OSV-Scanner gate in CI, `SecurityIntegrationTest#noXsltViewRenderingIsConfigured_CVE_2026_47884` | I S | Pass (0 open, 0 accepted since Spring Boot 4.1) |
 | NFR-OPS-01 | The whole application starts with one command; containers become healthy, the storefront proxies the API, sends security headers, runs the backend as non-root | CI job "Whole app in Docker" (44 smoke tests against the containers) | S | Pass |
 | NFR-OPS-02 | Code coverage never drops below the gate (lines >= 97 %, branches >= 88 %) | JaCoCo `check` in `mvn verify` | U I | Pass (97.5 % / 88.3 %) |
 | NFR-OPS-03 | The Jenkins pipeline is valid and has the same gates as GitHub Actions | CI job "Jenkinsfile lint" (Jenkins declarative validator) | CI | Pass |
 | NFR-DATA-01 | Database invariants: no negative stock, timeline matches status, rating summary matches reviews, no card data | `OrderDatabaseTest#noNegativeStock`, `LifecycleDatabaseTest#timelineMatchesStatus`, `ReviewDatabaseTest#ratingSummaryMatchesReviewsForAllProducts`, `PaymentDatabaseTest#noCardDataColumns` | D | Pass |
+| NFR-API-01 | API responses keep their contract: required fields, types, formats and enums; no undeclared field (privacy: public tracking without customer data, masked reviewers, last 4 card digits only) | `ApiContractTest#authContract`, `ApiContractTest#catalogContract`, `ApiContractTest#purchaseContract`, `ApiContractTest#reviewsContract`, `ApiContractTest#wishlistContract`, `ApiContractTest#errorContract` | A | Pass |
+| NFR-API-02 | No breaking API change without an approved baseline (removed endpoint/field, new required input, changed type) | OpenAPI breaking-change gate (`.github/scripts/openapi-breaking-changes.sh`, with self-test) | CI | Pass (34 paths unchanged) |
+| NFR-A11Y-01 | Every storefront page meets WCAG 2.1 level A and AA (no serious or critical axe-core violation) | `AccessibilityTest#wcag21aa` (8 pages) | UI | Pass |
 
 ## Coverage summary
 
@@ -124,5 +127,5 @@ Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured
 | Fulfilment and returns | 6 | 6 | - |
 | Reviews and wishlist | 11 | 11 | - |
 | Storefront UI | 4 | 4 | - |
-| Non-functional | 9 | 9 | - |
-| **Total** | **59** | **59 (100 %)** | **0** |
+| Non-functional | 12 | 12 | - |
+| **Total** | **62** | **62 (100 %)** | **0** |
