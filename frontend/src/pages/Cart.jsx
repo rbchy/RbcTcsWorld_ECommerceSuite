@@ -28,13 +28,13 @@ export default function Cart() {
       ) : (
         <>
           <table data-testid="cart-table">
-            <thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Total</th><th /></tr></thead>
+            <thead><tr><th>Product</th><th>Price</th><th>Qty</th><th>Total</th><th><span className="sr-only">Actions</span></th></tr></thead>
             <tbody>
               {cart.items.map(i => (
                 <tr key={i.itemId} data-testid="cart-line" data-sku={i.sku}>
                   <td>{i.name}{!i.available && <span className="error small" data-testid="line-unavailable"> (no longer available)</span>}</td>
                   <td>{money(i.unitPrice)}</td>
-                  <td><input type="number" min="1" max="10" defaultValue={i.quantity} className="qty" data-testid="line-qty"
+                  <td><input type="number" min="1" max="10" defaultValue={i.quantity} className="qty" data-testid="line-qty" aria-label={`Quantity of ${i.name}`}
                              onBlur={e => e.target.value !== String(i.quantity) && update(i.itemId, e.target.value)} /></td>
                   <td data-testid="line-total">{money(i.lineTotal)}</td>
                   <td><button className="link" data-testid="line-remove" onClick={() => remove(i.itemId)}>Remove</button></td>

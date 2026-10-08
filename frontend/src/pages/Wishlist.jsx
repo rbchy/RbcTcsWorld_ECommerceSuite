@@ -24,7 +24,7 @@ export default function Wishlist() {
       {error && <p data-testid="wishlist-error" className="error">{error}</p>}
       {list.count === 0 ? <p data-testid="wishlist-empty">Your wishlist is empty. <a href="#/">Browse products</a></p> : (
         <table data-testid="wishlist-table">
-          <thead><tr><th>Product</th><th>Rating</th><th>Price</th><th></th></tr></thead>
+          <thead><tr><th>Product</th><th>Rating</th><th>Price</th><th><span className="sr-only">Actions</span></th></tr></thead>
           <tbody>
             {list.items.map(i => (
               <tr key={i.productId} data-testid="wishlist-line" data-sku={i.sku}>
