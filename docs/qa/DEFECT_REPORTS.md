@@ -430,6 +430,9 @@ Manual keyboard and screen-reader checks stay on the release checklist (automate
 AppArmor profile, Edge does not, so Edge's sandbox cannot start and the browser exits at once.
 **Fix:** Edge gets `--no-sandbox --disable-dev-shm-usage` only when the `CI` variable is set (CI runners are
 throw-away machines); developer machines keep the sandbox. **Result:** Edge 20/20, Firefox 20/20.
+**Follow-up (flaky, found before the merge):** one later Edge run timed out in `setCurrentWindowSize` - the
+resize of the running headless window added in the same branch. The viewport is now set by start arguments
+(`--window-size`, Firefox `--width/--height`); a resize after start is left only for Safari.
 
 ---
 

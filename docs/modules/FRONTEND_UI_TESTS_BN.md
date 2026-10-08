@@ -72,6 +72,9 @@ UI টেস্ট fail করলে Allure রিপোর্টে screenshot 
 - **কারণ:** Ubuntu 24.04 CI runner-এ Edge-এর sandbox চালু হতে পারছিল না। Chrome-এর জন্য AppArmor profile আছে, Edge-এর নেই।
 - **সমাধান:** শুধু CI-তে (`CI` environment variable থাকলে) Edge `--no-sandbox` দিয়ে চলে। Developer-এর মেশিনে sandbox যেমন ছিল তেমনই থাকে।
 - **ফল:** Edge-এও ২০/২০ পাস।
+- **পরে আরেকটা flaky সমস্যা (merge-এর আগেই ধরা):**
+  - পরের একটা run-এ Edge-এর একটা টেস্ট window-এর আকার বদলাতে গিয়ে timeout হয়েছিল। এই resize-টা এই branch-এই যোগ করা হয়েছিল।
+  - **সমাধান:** এখন browser চালু করার সময়েই argument দিয়ে আকার ঠিক করা হয় (`--window-size`)। চালুর পরে resize শুধু Safari-তে হয়।
 
 ## ইন্টারভিউতে যা বলবেন
 > "UI layer-এ Page Object Model আর শুধু explicit wait ব্যবহার করেছি। Locator সব `data-testid`, তাই ডিজাইন বদলালেও টেস্ট টেকে। ধীর precondition আমি API দিয়ে তৈরি করি, আর UI দিয়ে শুধু সেই আচরণ যাচাই করি যেটা গ্রাহক দেখে। এতে UI suite দ্রুত আর স্থিতিশীল থাকে। পুরো কেনাকাটার পথ, মানে কুপন, declined কার্ড, পেমেন্ট, cancel আর return, প্রতিটা push-এ CI-তে headless Chrome, Firefox আর Edge তিনটাতেই চলে।"
