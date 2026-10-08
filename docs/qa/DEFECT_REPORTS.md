@@ -26,6 +26,7 @@ only after a regression test was added; the test is named in the report. Test-co
 | [DEF-016](#def-016) | Storefront search shows results of an older search when typing fast | Product - UI | Medium | P2 | Selenium UI test (during the Spring Boot 4 upgrade) | Closed |
 | [DEF-017](#def-017) | Query string with a parameter without a name returns 500 | Product - regression | Medium | P2 | OWASP ZAP + API test against the real server | Closed |
 | [DEF-018](#def-018) | Storefront fails WCAG 2.1 AA on every page (contrast, labels, page language) | Product - accessibility | High | P1 | axe-core accessibility tests (written first) | Closed |
+| [DEF-019](#def-019) | Edge does not start in CI ("Chrome instance exited"), Firefox fine | Test infrastructure | Medium | P2 | New cross-browser CI job | Closed |
 
 **Where defects were found** - one reason each test layer exists:
 
@@ -42,6 +43,7 @@ only after a regression test was added; the test is named in the report. Test-co
 | A second CI system on another CPU architecture (Jenkins, Mac ARM) | DEF-014, DEF-015 |
 | Full regression during a framework upgrade (Spring Boot 4) | DEF-016, DEF-017 |
 | Accessibility tests (axe-core, WCAG 2.1 AA) | DEF-018 |
+| Cross-browser CI (Firefox, Edge) | DEF-019 |
 
 ---
 
@@ -413,6 +415,21 @@ empty table header for the action column (minor).
 review sort and return reason; screen-reader-only column headers; visible `:focus-visible` outline.
 **Regression test:** `AccessibilityTest#wcag21aa` on 8 pages - 0 serious/critical after the fix.
 Manual keyboard and screen-reader checks stay on the release checklist (automated rules find only part of the problems).
+
+---
+
+## DEF-019
+**Edge does not start in CI ("Chrome instance exited"), Firefox fine**
+
+| Field | Value |
+|---|---|
+| Severity / Priority | Medium / P2 - 20 of 20 Edge tests errored before the first page; no product impact |
+| Environment | GitHub Actions `ubuntu-latest` (Ubuntu 24.04), Microsoft Edge 154, Selenium 4.25 |
+
+**Root cause (most likely):** Ubuntu 24.04 restricts unprivileged user namespaces through AppArmor; Chrome ships an
+AppArmor profile, Edge does not, so Edge's sandbox cannot start and the browser exits at once.
+**Fix:** Edge gets `--no-sandbox --disable-dev-shm-usage` only when the `CI` variable is set (CI runners are
+throw-away machines); developer machines keep the sandbox. **Result:** Edge 20/20, Firefox 20/20.
 
 ---
 

@@ -114,6 +114,7 @@ Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured
 | NFR-API-01 | API responses keep their contract: required fields, types, formats and enums; no undeclared field (privacy: public tracking without customer data, masked reviewers, last 4 card digits only) | `ApiContractTest#authContract`, `ApiContractTest#catalogContract`, `ApiContractTest#purchaseContract`, `ApiContractTest#reviewsContract`, `ApiContractTest#wishlistContract`, `ApiContractTest#errorContract` | A | Pass |
 | NFR-API-02 | No breaking API change without an approved baseline (removed endpoint/field, new required input, changed type) | OpenAPI breaking-change gate (`.github/scripts/openapi-breaking-changes.sh`, with self-test) | CI | Pass (34 paths unchanged) |
 | NFR-A11Y-01 | Every storefront page meets WCAG 2.1 level A and AA (no serious or critical axe-core violation) | `AccessibilityTest#wcag21aa` (8 pages) | UI | Pass |
+| NFR-UI-02 | The storefront works the same in Chrome, Firefox and Edge | `UiShoppingJourneyTest#endToEndPurchase`, `UiOrderAfterSalesTest#trackingAndReturn`, `AccessibilityTest#wcag21aa` (all UI tests in each browser; CI job "UI tests in firefox / edge") | UI | Pass (20/20 per browser) |
 
 ## Coverage summary
 
@@ -127,5 +128,5 @@ Levels: **U** unit · **I** integration (Spring + H2) · **A** API (REST Assured
 | Fulfilment and returns | 6 | 6 | - |
 | Reviews and wishlist | 11 | 11 | - |
 | Storefront UI | 4 | 4 | - |
-| Non-functional | 12 | 12 | - |
-| **Total** | **62** | **62 (100 %)** | **0** |
+| Non-functional | 13 | 13 | - |
+| **Total** | **63** | **63 (100 %)** | **0** |

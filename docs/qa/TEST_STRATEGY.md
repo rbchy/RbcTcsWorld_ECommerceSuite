@@ -138,6 +138,7 @@ A push to `main` is green only if all of these pass (`.github/workflows/ci.yml`;
 | 11 | Jenkinsfile | the declarative validator of a real Jenkins rejects the pipeline |
 | 12 | API contract | a response breaks its JSON Schema, or the OpenAPI description has a breaking change against `docs/api/openapi.json` |
 | 13 | Accessibility | a storefront page has a serious or critical WCAG 2.1 A/AA violation (axe-core) |
+| 14 | Cross-browser | a UI journey or accessibility check fails in Firefox or Edge (Chrome: gate 2) |
 
 Reports produced on every run: Allure (published), JUnit XML, Cucumber HTML, k6 HTML/JSON,
 ZAP HTML/JSON, OSV JSON.
