@@ -62,6 +62,65 @@ jobs:
         if: always()
         with: { name: mutation-report, path: backend/target/pit-reports }
 
+  ui-cross-browser:
+    name: UI tests in ${{ matrix.browser }} (headless)
+    needs: backend-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false          # one browser failing must not hide the result of the other
+      matrix:
+        browser: [firefox, edge]   # Chrome runs in the main automation job; all three are preinstalled on the runner
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_DB: ecommerce, POSTGRES_USER: ecommerce, POSTGRES_PASSWORD: ecommerce }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ecommerce" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21', cache: maven }
+      - name: Build and start backend
+        run: |
+          mvn -B -q -f backend/pom.xml -DskipTests package
+          nohup java -jar backend/target/ecommerce-backend-1.0.0.jar > backend.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:8081/actuator/health >/dev/null && break; sleep 2; done
+          curl -sf http://localhost:8081/actuator/health
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: npm, cache-dependency-path: frontend/package-lock.json }
+      - name: Build and serve frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          nohup npx vite preview --port 5173 --strictPort > ../frontend.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:5173 > /dev/null && break; sleep 1; done
+      - name: Browser version
+        run: |
+          case "${{ matrix.browser }}" in
+            firefox) v=$(firefox --version) ;;
+            edge)    v=$(microsoft-edge --version) ;;
+          esac
+          echo "::notice title=Browser (${{ matrix.browser }})::$v"
+      - name: Selenium UI journeys + accessibility in ${{ matrix.browser }}
+        run: >-
+          mvn -B -f automation/pom.xml test -Dgroups=ui -Dbrowser=${{ matrix.browser }}
+          -DbaseUrl=http://localhost:8081 -DuiUrl=http://localhost:5173 -Dheadless=true
+      - name: Test totals
+        if: always()
+        run: .github/scripts/test-totals.sh "ui-${{ matrix.browser }}" automation/target/surefire-reports
+      - name: Show failed tests as annotations
+        if: failure()
+        run: .github/scripts/annotate-failures.sh automation/target/surefire-reports
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-${{ matrix.browser }}-results
+          path: |
+            automation/target/surefire-reports
+            automation/target/allure-results
+
   api-automation:
     name: API + DB + BDD + Selenium UI tests (PostgreSQL)
     needs: backend-tests
