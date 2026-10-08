@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Product",
+  "description": "GET /api/products/{id}; also each element of GET /api/products",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "sku",
+    "category",
+    "price",
+    "stock",
+    "active",
+    "ratingAverage",
+    "ratingCount"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "name": {
+      "type": "string"
+    },
+    "sku": {
+      "type": "string"
+    },
+    "category": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "price": {
+      "type": "number",
+      "minimum": 0
+    },
+    "stock": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "active": {
+      "type": "boolean"
+    },
+    "ratingAverage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 5
+    },
+    "ratingCount": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

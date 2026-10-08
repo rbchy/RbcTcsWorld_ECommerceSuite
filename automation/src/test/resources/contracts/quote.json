@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Checkout quote",
+  "description": "POST /api/checkout/quote - nothing is saved",
+  "type": "object",
+  "required": [
+    "items",
+    "totalQuantity",
+    "subtotal",
+    "couponCode",
+    "discount",
+    "shippingFee",
+    "tax",
+    "total"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "productId",
+          "sku",
+          "name",
+          "unitPrice",
+          "quantity",
+          "lineTotal"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sku": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unitPrice": {
+            "type": "number",
+            "minimum": 0
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "lineTotal": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "totalQuantity": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "subtotal": {
+      "type": "number",
+      "minimum": 0
+    },
+    "couponCode": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "discount": {
+      "type": "number",
+      "minimum": 0
+    },
+    "shippingFee": {
+      "type": "number",
+      "minimum": 0
+    },
+    "tax": {
+      "type": "number",
+      "minimum": 0
+    },
+    "total": {
+      "type": "number",
+      "minimum": 0
+    }
+  }
+}
