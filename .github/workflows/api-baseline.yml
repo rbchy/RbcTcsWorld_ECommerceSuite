@@ -1,0 +1,41 @@
+name: API baseline
+
+# Approves the current API contract: starts the backend, saves its OpenAPI description to docs/api/openapi.json
+# and commits it to the branch the workflow runs on. Run it (Actions -> API baseline -> Run workflow) after a
+# DELIBERATE contract change; until then CI fails on breaking changes against the old baseline.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_DB: ecommerce, POSTGRES_USER: ecommerce, POSTGRES_PASSWORD: ecommerce }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ecommerce" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21', cache: maven }
+      - name: Start backend and save the OpenAPI description
+        run: |
+          mvn -B -q -f backend/pom.xml -DskipTests package
+          nohup java -jar backend/target/ecommerce-backend-1.0.0.jar > backend.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:8081/actuator/health >/dev/null && break; sleep 2; done
+          mkdir -p docs/api
+          curl -sf http://localhost:8081/v3/api-docs | jq -S 'del(.servers)' > docs/api/openapi.json
+          echo "::notice title=API baseline::$(jq '.paths|length' docs/api/openapi.json) paths, $(jq '.components.schemas|length' docs/api/openapi.json) schemas"
+      - name: Commit the baseline
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/api/openapi.json
+          if git diff --cached --quiet; then echo "::notice title=API baseline::unchanged"; exit 0; fi
+          git commit -m "API baseline: approve the current OpenAPI contract"
+          git push
