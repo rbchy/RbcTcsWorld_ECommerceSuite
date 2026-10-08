@@ -51,6 +51,9 @@ public final class DriverFactory {
             case "edge" -> {
                 EdgeOptions o = new EdgeOptions();
                 if (headless) o.addArguments("--headless=new");
+                // DEF-019: on the Ubuntu 24.04 CI runners AppArmor blocks Edge's sandbox (Chrome ships an AppArmor
+                // profile, Edge does not), so Edge exits at start. Only in CI, never on a developer machine.
+                if (System.getenv("CI") != null) o.addArguments("--no-sandbox", "--disable-dev-shm-usage");
                 yield new EdgeDriver(o);
             }
             default -> {
