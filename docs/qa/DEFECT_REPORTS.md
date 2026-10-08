@@ -25,6 +25,7 @@ only after a regression test was added; the test is named in the report. Test-co
 | [DEF-015](#def-015) | OWASP ZAP crashes on Apple Silicon (DOM XSS rule starts Firefox) | Test infrastructure | Medium | P2 | Jenkins run (Mac, ARM) | Closed |
 | [DEF-016](#def-016) | Storefront search shows results of an older search when typing fast | Product - UI | Medium | P2 | Selenium UI test (during the Spring Boot 4 upgrade) | Closed |
 | [DEF-017](#def-017) | Query string with a parameter without a name returns 500 | Product - regression | Medium | P2 | OWASP ZAP + API test against the real server | Closed |
+| [DEF-018](#def-018) | Storefront fails WCAG 2.1 AA on every page (contrast, labels, page language) | Product - accessibility | High | P1 | axe-core accessibility tests (written first) | Closed |
 
 **Where defects were found** - one reason each test layer exists:
 
@@ -40,6 +41,7 @@ only after a regression test was added; the test is named in the report. Test-co
 | Mutation testing (tests of the tests) | DEF-013 |
 | A second CI system on another CPU architecture (Jenkins, Mac ARM) | DEF-014, DEF-015 |
 | Full regression during a framework upgrade (Spring Boot 4) | DEF-016, DEF-017 |
+| Accessibility tests (axe-core, WCAG 2.1 AA) | DEF-018 |
 
 ---
 
@@ -392,6 +394,25 @@ for a malformed query string; it reached the catch-all handler. MockMvc does not
 **Fix:** the handler maps `InvalidParameterException` (also when wrapped) to its 4xx code, default 400.
 **Regression tests:** `InputAndExposureTest.malformedQueryStrings` (JDK HTTP client, real server; REST Assured
 cannot send a nameless parameter), `GlobalExceptionHandlerTest`. CI now shows every backend 500 with its exception.
+
+---
+
+## DEF-018
+**Storefront fails WCAG 2.1 AA on every page (contrast, labels, page language)**
+
+| Field | Value |
+|---|---|
+| Severity / Priority | High / P1 - customers using screen readers or with low vision cannot complete a purchase reliably; legal exposure (ADA) |
+| Component | `frontend/index.html`, `frontend/src/style.css`, Home, Cart, ProductDetail, OrderDetail, Wishlist pages |
+| Found by | `AccessibilityTest#wcag21aa` (axe-core 4.11 in Chrome), written before the fix: 8 of 8 pages failed |
+
+**Findings:** no `lang` on `<html>` (all pages, serious); white text on the orange buttons 2.9:1, muted text and
+rating stars below 4.5:1 (serious); quantity inputs and two selects without an accessible name (critical);
+empty table header for the action column (minor).
+**Fix:** `lang="en"`; accent `#b45309`, muted `#56616e`, stars `#8a5a00`; `aria-label` on quantity inputs, search,
+review sort and return reason; screen-reader-only column headers; visible `:focus-visible` outline.
+**Regression test:** `AccessibilityTest#wcag21aa` on 8 pages - 0 serious/critical after the fix.
+Manual keyboard and screen-reader checks stay on the release checklist (automated rules find only part of the problems).
 
 ---
 

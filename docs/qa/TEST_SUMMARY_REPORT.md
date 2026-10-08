@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Release | 1.1 (Modules 0-5, storefront UI, performance and security hardening; Spring Boot 4.1) |
-| Build | branch `upgrade/spring-boot-4` -> `main`, CI on 2026-10-07 (GitHub Actions), all gates green |
+| Release | 1.2 (Modules 0-5, storefront UI, performance and security hardening; Spring Boot 4.1; API contract and accessibility) |
+| Build | branch `feature/api-contract-a11y` -> `main`, CI on 2026-10-08 (GitHub Actions), all gates green |
 | Prepared by | RB Chowdhury, QA Lead |
 | Plan | [Test Plan](TEST_PLAN.md) |
 
@@ -18,8 +18,8 @@ catalog the endpoint p95 dropped from 22 ms to 9 ms (-59 %).
 
 | # | Criterion | Target | Result | |
 |---|---|---|---|---|
-| 1 | Automated tests on CI | 100 % pass | **557 / 557** passed, 0 skipped (+44 smoke against Docker) | ✅ |
-| 2 | Requirement coverage | >= 95 % | **59 / 59 = 100 %** | ✅ |
+| 1 | Automated tests on CI | 100 % pass | **571 / 571** passed, 0 skipped (+44 smoke against Docker) | ✅ |
+| 2 | Requirement coverage | >= 95 % | **62 / 62 = 100 %** | ✅ |
 | 3 | Open Critical / High defects | 0 | **0** | ✅ |
 | 4 | k6 smoke + load SLOs | all pass | all pass | ✅ |
 | 5 | k6 flash sale | orders = stock, stock 0 | 15 / 15 (CI), 50 / 50 (local, 300 buyers) | ✅ |
@@ -27,17 +27,19 @@ catalog the endpoint p95 dropped from 22 ms to 9 ms (-59 %).
 | 7 | OSV-Scanner | 0 unaccepted CVSS >= 9 | **0 open, 0 accepted** (was 21; both Spring CVEs fixed by the Boot 4 upgrade) | ✅ |
 | 8 | Code coverage (JaCoCo) | >= 97 % lines, >= 88 % branches | **97.5 % lines, 88.3 % branches** | ✅ |
 | 9 | Mutation score (PIT, business logic) | >= 84 % | **84.9 %** (was 65.5 %); test strength 97.5 % | ✅ |
+| 10 | API contract | 12 schemas match; no breaking OpenAPI change | **6/6 contract tests, OpenAPI unchanged (34 paths)** | ✅ |
+| 11 | Accessibility (WCAG 2.1 AA, axe-core) | 0 serious/critical on every page | **8/8 pages clean** (all 8 failed before DEF-018) | ✅ |
 
 ## 3. Test execution
 
 | Suite | Tests | Passed | Failed | Skipped | Runs against |
 |---|---|---|---|---|---|
 | Backend unit + integration | 284 | 284 | 0 | 0 | H2 (PostgreSQL mode) + Flyway |
-| Automation: API, DB, security, BDD, UI | 273 | 273 | 0 | 0 | Backend + PostgreSQL 16 + headless Chrome |
-| **Total** | **557** | **557** | **0** | **0** | |
+| Automation: API, DB, security, BDD, UI | 287 | 287 | 0 | 0 | Backend + PostgreSQL 16 + headless Chrome |
+| **Total** | **571** | **571** | **0** | **0** | |
 | Smoke against the Docker images | 44 | 44 | 0 | 0 | `docker compose --profile app` (postgres + backend + nginx storefront) |
 
-The automation total contains 43 Cucumber scenarios and 12 Selenium UI tests; the rest are API,
+The automation total contains 43 Cucumber scenarios, 12 Selenium UI journeys, 8 accessibility page checks and 6 API contract tests; the rest are API,
 database and security tests. Figures come from the CI "Test totals" annotations (surefire XML).
 
 ## 4. Performance
@@ -72,12 +74,12 @@ cost of correctness and is far below the 3-second target.
 | Severity | Found | Fixed | Open |
 |---|---|---|---|
 | Critical | 1 | 1 | 0 |
-| High | 4 | 4 | 0 |
+| High | 5 | 5 | 0 |
 | Medium | 9 | 9 | 0 |
 | Low | 3 | 3 | 0 |
-| **Total** | **17** | **17** | **0** |
+| **Total** | **18** | **18** | **0** |
 
-10 product defects, 5 test-code defects, 2 test-infrastructure defects. Every closed product defect has a regression test.
+11 product defects, 5 test-code defects, 2 test-infrastructure defects. Every closed product defect has a regression test.
 Details: [Defect Reports](DEFECT_REPORTS.md).
 
 ## 7. Residual risks accepted for release 1.0

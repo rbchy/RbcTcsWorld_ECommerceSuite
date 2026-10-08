@@ -27,13 +27,15 @@ test layers that mitigate the risk; "Residual" is what remains after mitigation.
 | R-19 | UI does not reflect API rules (button works but rule ignored) | 2 | 2 | **4** | 12 Selenium journeys incl. coupon, declined card, return, review, wishlist | UI | Low |
 | R-20 | Flaky automation hides real failures or blocks releases | 2 | 2 | **4** | Explicit waits only, stale-safe page objects, per-test data, failure annotations in CI ([DEF-008](DEFECT_REPORTS.md#def-008), [DEF-009](DEFECT_REPORTS.md#def-009)); PIT mutation testing finds assertions that cannot fail ([DEF-013](DEFECT_REPORTS.md#def-013)) | Framework design, PIT | Low |
 | R-21 | Schema change breaks existing data | 1 | 3 | **3** | Flyway migrations run in every integration test and every CI database; Hibernate `validate` | Integration, CI | Low |
+| R-22 | An API change silently breaks the storefront or another client | 2 | 2 | **4** | 12 strict JSON Schemas (consumer side); OpenAPI breaking-change gate with self-test (provider side) | API, CI | Low |
+| R-23 | Customers with disabilities cannot use the shop (and ADA legal exposure) | 2 | 3 | **6** | axe-core WCAG 2.1 AA checks on 8 pages in every build ([DEF-018](DEFECT_REPORTS.md#def-018)) | UI | Medium: automated rules cover only part of WCAG; manual keyboard / screen-reader checks per release |
 
 ## Heat map
 
 | Impact \ Likelihood | 1 Low | 2 Medium | 3 High |
 |---|---|---|---|
-| **3 High** | R-07, R-08, R-16, R-21 | R-01, R-03, R-04, R-09, R-14 | **R-02, R-05, R-15** |
-| **2 Medium** | | R-06, R-10, R-11, R-12, R-13, R-17, R-18, R-19, R-20 | |
+| **3 High** | R-07, R-08, R-16, R-21 | R-01, R-03, R-04, R-09, R-14, R-23 | **R-02, R-05, R-15** |
+| **2 Medium** | | R-06, R-10, R-11, R-12, R-13, R-17, R-18, R-19, R-20, R-22 | |
 | **1 Low** | | | |
 
 The three red risks (oversell, brute force, vulnerable libraries) each have an automated gate
