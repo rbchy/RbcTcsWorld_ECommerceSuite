@@ -87,7 +87,7 @@ right total, a declined card shows the error, a return can be requested).
 |---|---|---|
 | Functional API | REST Assured 5.5, JUnit 5 | Allure: request/response of every call |
 | Acceptance (BDD) | Cucumber 7.18 | Allure: Gherkin steps; `cucumber-report.html` |
-| UI | Selenium 4.25, Chrome headless | Allure: screenshot + URL on failure |
+| UI | Selenium 4.49, Chrome headless | Allure: screenshot + URL on failure |
 | Data integrity | JDBC (PostgreSQL driver) | Allure: SQL results in assertions |
 | Performance | k6 | `performance/reports/*-report.html`, CI annotations |
 | Security - attack tests | REST Assured, hand-crafted JWTs (Base64 + HMAC) | Allure Epic "Security" |

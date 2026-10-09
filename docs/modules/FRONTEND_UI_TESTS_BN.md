@@ -76,5 +76,11 @@ UI টেস্ট fail করলে Allure রিপোর্টে screenshot 
   - পরের একটা run-এ Edge-এর একটা টেস্ট window-এর আকার বদলাতে গিয়ে timeout হয়েছিল। এই resize-টা এই branch-এই যোগ করা হয়েছিল।
   - **সমাধান:** এখন browser চালু করার সময়েই argument দিয়ে আকার ঠিক করা হয় (`--window-size`)। চালুর পরে resize শুধু Safari-তে হয়।
 
+**DEF-020 (Jenkins, Mac):** GitHub CI সবুজ থাকলেও Jenkins-এ `BROWSER=edge` আর `firefox`-এ ২০টা UI টেস্টই driver না পেয়ে ভেঙেছিল।
+- **Edge:** Microsoft পুরনো driver download সাইট (`msedgedriver.azureedge.net`) বন্ধ করে দিয়েছে। Selenium 4.25-এর Selenium Manager তখনও সেখানেই খুঁজছিল।
+- **Firefox:** Mac-এ Firefox install করা ছিল না। Selenium Manager নিজে browser নামাতে গিয়ে installer খুলতে পারেনি।
+- **কেন GitHub-এ ধরা পড়েনি:** GitHub runner-এ browser আর driver আগে থেকেই install থাকে, তাই কিছু নামাতে হয় না।
+- **সমাধান:** Selenium 4.49-এ upgrade (নতুন download ঠিকানা), আর Jenkins Mac-এ `brew install --cask firefox`।
+
 ## ইন্টারভিউতে যা বলবেন
 > "UI layer-এ Page Object Model আর শুধু explicit wait ব্যবহার করেছি। Locator সব `data-testid`, তাই ডিজাইন বদলালেও টেস্ট টেকে। ধীর precondition আমি API দিয়ে তৈরি করি, আর UI দিয়ে শুধু সেই আচরণ যাচাই করি যেটা গ্রাহক দেখে। এতে UI suite দ্রুত আর স্থিতিশীল থাকে। পুরো কেনাকাটার পথ, মানে কুপন, declined কার্ড, পেমেন্ট, cancel আর return, প্রতিটা push-এ CI-তে headless Chrome, Firefox আর Edge তিনটাতেই চলে।"
