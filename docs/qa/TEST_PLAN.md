@@ -36,8 +36,8 @@ defect is open, and give a documented go / no-go recommendation.
 | Real payment provider | Mock gateway in this release; contract tests against a provider sandbox in a later release |
 | E-mail / SMS notifications | Not implemented |
 | Admin UI | Admin functions are API-only; covered by API and access-control tests |
-| Mobile apps, browsers other than Chrome | Chrome only; Firefox and Edge are supported by `DriverFactory` but not part of the gate |
-| Accessibility (WCAG) audit | Planned for a later release |
+| Mobile apps, Safari in CI | Chrome gates every build; Firefox and Edge run as a CI matrix; Safari only on a Mac (Jenkins `BROWSER` parameter), no headless mode |
+| Manual accessibility audit (keyboard-only, screen reader, 200 % zoom) | Automated axe-core WCAG 2.1 AA checks gate every build; the manual part stays on the release checklist |
 | Production capacity planning | CI runner numbers are for comparison only |
 
 ## 3. Test items and versions
