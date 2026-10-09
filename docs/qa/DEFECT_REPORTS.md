@@ -27,6 +27,7 @@ only after a regression test was added; the test is named in the report. Test-co
 | [DEF-017](#def-017) | Query string with a parameter without a name returns 500 | Product - regression | Medium | P2 | OWASP ZAP + API test against the real server | Closed |
 | [DEF-018](#def-018) | Storefront fails WCAG 2.1 AA on every page (contrast, labels, page language) | Product - accessibility | High | P1 | axe-core accessibility tests (written first) | Closed |
 | [DEF-019](#def-019) | Edge does not start in CI ("Chrome instance exited"), Firefox fine | Test infrastructure | Medium | P2 | New cross-browser CI job | Closed |
+| [DEF-020](#def-020) | Edge and Firefox UI tests cannot get a driver on the Jenkins Mac (Selenium Manager) | Test infrastructure | Medium | P2 | Jenkins run with the BROWSER parameter | Closed |
 
 **Where defects were found** - one reason each test layer exists:
 
@@ -43,7 +44,7 @@ only after a regression test was added; the test is named in the report. Test-co
 | A second CI system on another CPU architecture (Jenkins, Mac ARM) | DEF-014, DEF-015 |
 | Full regression during a framework upgrade (Spring Boot 4) | DEF-016, DEF-017 |
 | Accessibility tests (axe-core, WCAG 2.1 AA) | DEF-018 |
-| Cross-browser CI (Firefox, Edge) | DEF-019 |
+| Cross-browser CI (Firefox, Edge) | DEF-019, DEF-020 |
 
 ---
 
@@ -433,6 +434,31 @@ throw-away machines); developer machines keep the sandbox. **Result:** Edge 20/2
 **Follow-up (flaky, found before the merge):** one later Edge run timed out in `setCurrentWindowSize` - the
 resize of the running headless window added in the same branch. The viewport is now set by start arguments
 (`--window-size`, Firefox `--width/--height`); a resize after start is left only for Safari.
+
+---
+
+## DEF-020
+**Edge and Firefox UI tests cannot get a driver on the Jenkins Mac (Selenium Manager)**
+
+| Field | Value |
+|---|---|
+| Severity / Priority | Medium / P2 - 20 of 20 UI tests (incl. 8 accessibility pages) broken before the first page; no product impact |
+| Environment | Jenkins builds #14 (`BROWSER=firefox`) and #15 (`BROWSER=edge`), macOS 26 on Apple Silicon, Java 26, Selenium 4.25 |
+
+**Evidence:** `NoSuchDriverException: Unable to obtain: msedgedriver ... error sending request for url
+(https://msedgedriver.azureedge.net/LATEST_RELEASE_155_MACOS)` and `Unable to obtain: geckodriver ... cpio archive
+error: bad magic value encountered`.
+**Root cause:**
+- Edge: Microsoft retired the old Azure download host `msedgedriver.azureedge.net`; Selenium Manager in 4.25
+  still asks there. Newer Selenium Manager uses `msedgedriver.microsoft.com`.
+- Firefox: Firefox is not installed on the Mac, so Selenium Manager tries to download the browser itself and
+  fails to unpack the current macOS installer package.
+- GitHub CI stayed green because its runners have Edge, Firefox and their drivers preinstalled - the gap only
+  shows on a machine where Selenium Manager has to download things.
+**Fix:** Selenium 4.25 -> 4.49 (current Selenium Manager); Firefox installed on the Jenkins Mac
+(`brew install --cask firefox`).
+**Lesson:** a pinned test library also pins its download URLs - external services change, so the browser
+tooling needs the same update cadence as the application dependencies.
 
 ---
 

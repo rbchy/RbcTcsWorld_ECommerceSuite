@@ -26,7 +26,7 @@
     <junit.version>5.11.0</junit.version>
     <junit.platform.version>1.11.0</junit.platform.version>
     <cucumber.version>7.18.0</cucumber.version>
-    <selenium.version>4.25.0</selenium.version>
+    <selenium.version>4.49.0</selenium.version>
     <restassured.version>5.5.0</restassured.version>
     <jackson.version>2.21.7</jackson.version>
     <postgresql.version>42.7.13</postgresql.version>
