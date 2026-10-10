@@ -15,17 +15,9 @@ jobs:
         run: |
           mvn -B -q -f automation/pom.xml dependency:tree -Dincludes=org.freemarker,org.mozilla,org.apache.httpcomponents.client5,org.apache.httpcomponents.core5 -DoutputFile=$PWD/tree.txt || true
           sed 's/%/%25/g' tree.txt | tr '\n' '|' | sed 's/^/::notice title=tree ${{ matrix.os }}::/'; echo
-      - uses: google/osv-scanner-action/osv-scanner-action@b77c075a1235514558f0eb88dbd31e22c45e0cd2
-        continue-on-error: true
-        with:
-          scan-args: |-
-            --format=json
-            --output=osv-results.json
-            --recursive
-            ./
-      - name: osv summary
-        if: always()
+      - name: osv-scanner with logs
         run: |
-          jq -r '.results[] | "\(.source.path): \(.packages|length) vulnerable"' osv-results.json | tr '\n' '|' | sed 's/^/::notice title=osv ${{ matrix.os }}::/'; echo
-          jq -r '[.results[].packages[].package.name]|join(", ")' osv-results.json | sed 's/^/::notice title=pkgs ${{ matrix.os }}::/'
-          (ls -la ~/.m2 2>&1; cat ~/.m2/settings.xml 2>&1 | head -5) | tr '\n' '|' | sed 's/^/::notice title=m2 ${{ matrix.os }}::/'; echo
+          docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:v2.3.0 scan source -r --verbosity=info --format=json --output=/src/out.json /src/automation 2> err.txt || true
+          grep -iv '^$' err.txt | tail -25 | sed 's/%/%25/g' | tr '\n' '|' | sed 's/^/::notice title=log ${{ matrix.os }}::/'; echo
+          jq -r '[.results[]?.packages[]?.package.name]|join(", ")' out.json | sed 's/^/::notice title=found ${{ matrix.os }}::/'
+          docker --version | sed 's/^/::notice title=docker ${{ matrix.os }}::/'
