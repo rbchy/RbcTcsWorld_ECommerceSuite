@@ -20,7 +20,7 @@ test layers that mitigate the risk; "Residual" is what remains after mitigation.
 | R-12 | Coupon used more often than allowed | 2 | 2 | **4** | Once per customer, global atomic counter, failed order does not consume the coupon | Unit, Integration, API | Low |
 | R-13 | Fake or manipulated reviews / wrong average | 2 | 2 | **4** | Verified purchase only; one per customer; moderation; average recalculated under a row lock; 8 concurrent reviews; DB drift query over all products | Unit, Integration, API, concurrency, DB | Low |
 | R-14 | Stored XSS through reviews | 2 | 3 | **6** | Payload stored and returned as plain data (API test); React escapes it on screen (verified in an exploratory UI check) | API, exploratory UI | Low: add an automated UI assertion |
-| R-15 | Known vulnerable library shipped | 3 | 3 | **9** | OSV-Scanner every push, build fails on fixable CVSS >= 9; 21 vulnerable packages reduced to 0 ([DEF-005](DEFECT_REPORTS.md#def-005)) | CI (SCA), guard test | Low: Spring Boot 4.1 (in OSS support), 0 vulnerable packages, 0 accepted exceptions; Tomcat/Jackson patch pins until Boot ships them |
+| R-15 | Known vulnerable library shipped | 3 | 3 | **9** | OSV-Scanner every push on Maven-resolved SBOMs (completeness check + self-test, [DEF-021](DEFECT_REPORTS.md#def-021)), build fails on fixable CVSS >= 9; 21 vulnerable packages reduced to 0 ([DEF-005](DEFECT_REPORTS.md#def-005)) | CI (SCA), guard test | Low: Spring Boot 4.1 (in OSS support), 0 vulnerable packages, 0 accepted exceptions; Tomcat/Jackson patch pins until Boot ships them |
 | R-16 | Injection (SQL, path traversal) | 1 | 3 | **3** | Parameterised JPA queries; injection payload tests; ZAP active scan with FAIL rules | API (security), ZAP | Low |
 | R-17 | Internal details leak in errors or actuator | 2 | 2 | **4** | Global JSON error handler; tests for stack traces, actuator endpoints, headers | Integration, API, ZAP | Low |
 | R-18 | Slow pages at peak traffic | 2 | 2 | **4** | k6 load with SLO thresholds; stress and spike on demand | k6 | Low: catalog paginated, response size gated in CI ([DEF-007](DEFECT_REPORTS.md#def-007)) |
@@ -29,6 +29,7 @@ test layers that mitigate the risk; "Residual" is what remains after mitigation.
 | R-21 | Schema change breaks existing data | 1 | 3 | **3** | Flyway migrations run in every integration test and every CI database; Hibernate `validate` | Integration, CI | Low |
 | R-22 | An API change silently breaks the storefront or another client | 2 | 2 | **4** | 12 strict JSON Schemas (consumer side); OpenAPI breaking-change gate with self-test (provider side) | API, CI | Low |
 | R-23 | Customers with disabilities cannot use the shop (and ADA legal exposure) | 2 | 3 | **6** | axe-core WCAG 2.1 AA checks on 8 pages in every build ([DEF-018](DEFECT_REPORTS.md#def-018)) | UI | Medium: automated rules cover only part of WCAG; manual keyboard / screen-reader checks per release |
+| R-24 | CI runner image changes overnight (browsers, sandbox rules, Docker) and turns main red | 2 | 2 | **4** | Runner pinned to `ubuntu-24.04`; weekly runner canary on the next image; Node 24 actions | CI | Low |
 
 ## Heat map
 

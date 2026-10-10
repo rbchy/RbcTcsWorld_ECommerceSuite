@@ -108,12 +108,41 @@ docker compose --profile app down              # বন্ধ (-v দিলে d
 **Interview-এ:**
 > "একটা CVSS 9.8 CVE এসেছিল যার কোনো fix ছিল না। আমি অন্ধভাবে suppress করিনি, আবার আতঙ্কিতও হইনি। কোথায় দুর্বলতাটা কাজ করে বিশ্লেষণ করে দেখলাম আমাদের app-এ সেটা ব্যবহারযোগ্য নয়। তারপর কারণ, guard test আর মেয়াদসহ ঝুঁকিটা লিখিতভাবে মেনে নিয়েছি। Guard test নিশ্চিত করে যে সেই ভিত্তি কখনো চুপচাপ বদলাতে পারবে না।"
 
+## ৫. CI-র রক্ষণাবেক্ষণ: runner pin, canary আর flaky টেস্ট (অক্টোবর ২০২৬)
+
+GitHub ঘোষণা দিয়েছিল, ১৯ অক্টোবর থেকে `ubuntu-latest` মানে হবে Ubuntu 26। নতুন image-এ browser, sandbox-এর নিয়ম আর Docker-এর version বদলায়। DEF-019-এ দেখেছি, এমন বদলেই Edge হঠাৎ চালু হওয়া বন্ধ করে দিয়েছিল। তাই:
+
+| কী | কেন |
+|---|---|
+| **Runner pin:** সব job `ubuntu-24.04`-এ | রাতারাতি image বদলালে `main` লাল হবে না। বদলটা আমরা নিজেরা ঠিক করি, কখন নেব। |
+| **Runner canary** (`.github/workflows/runner-canary.yml`) | প্রতি সোমবার পুরো pipeline পরের image-এ (`ubuntu-26.04`) চলে। `ci.yml`-কে reusable workflow হিসেবে ডাকে, তাই কোনো কোড দুবার লেখা নেই। Canary কখনো report publish করে না, আর `main`-কে আটকায় না। |
+| **Node 24 actions** | checkout v5, setup-java v5, setup-node v6, upload-artifact v6, download-artifact v7, pages v5। Node 20 আর সমর্থিত না। Storefront এখন Node 22 দিয়ে build হয় (CI আর Dockerfile দুটোতেই)। |
+| **Flaky টেস্ট দৃশ্যমান** | Browser টেস্ট fail করলে একবার আবার চলে (`-Dsurefire.rerunFailingTestsCount=1`)। দ্বিতীয়বার পাস করলে run-এর পেজে **FLAKY** warning আর গণনা দেখায়। দুবার fail করলে build লাল। API টেস্টের কোনো rerun নেই। |
+
+**Flaky reporting প্রমাণ করা:** একটা অস্থায়ী টেস্ট লিখেছিলাম, যেটা ইচ্ছা করে প্রথমবার fail করে আর দ্বিতীয়বার পাস করে। CI-তে সেটা `FLAKY ui-edge: ... failed 1x, passed on rerun` হিসেবে দেখা গেল, গণনায় `flaky 1`। তারপর টেস্টটা মুছে দিয়েছি।
+
+### Canary প্রথম run-এই একটা আসল সমস্যা ধরল (DEF-021)
+- **কী দেখা গেল:** Ubuntu 26-এর canary-তে OSV ৫টা ঝুঁকিপূর্ণ লাইব্রেরি পেল, যার একটা CVSS 9.1। অথচ একই commit-এ সাধারণ run বলল ০টা। **একই commit-এ একটা gate দুরকম উত্তর দিলে gate-টাই ত্রুটিপূর্ণ।**
+- **কারণ Ubuntu না:** OSV নিজে Maven Central থেকে transitive dependency খোঁজে। Central "429 Too Many Requests" দিলে সে চুপচাপ শুধু সরাসরি dependency দেখে (automation-এ ১৩০টার জায়গায় ১৪টা), তারপরও "সফল" দেখায়। কোন run-এ rate limit লাগবে, সেটা ভাগ্যের ব্যাপার।
+- **সমাধান (`security/osv-scan.sh`, GitHub আর Jenkins দুটোতেই):**
+  1. Maven নিজে পুরো dependency tree বের করে প্রতিটা module-এর **CycloneDX SBOM** বানায়, test scope সহ। Download ব্যর্থ হলে Maven build fail করে, চুপ থাকে না।
+  2. OSV শুধু SBOM আর `package-lock.json` scan করে। নিজে আর কিছু খোঁজে না।
+  3. **Completeness check:** কোনো SBOM-এ ৫০টার কম component থাকলে job লাল।
+  4. **Self-test:** log4j-core 2.14.1 (Log4Shell) থাকা একটা নমুনা SBOM-কে OSV-র অবশ্যই ধরতে হবে। না ধরলে database পৌঁছানো যায়নি, তাই "০টা" ফল বিশ্বাসযোগ্য না।
+- **লাইব্রেরি ঠিক করা:** freemarker 2.3.35, rhino 1.7.15.1। WebDriverManager বাদ দিয়েছি, কারণ আমরা সেটা ব্যবহারই করি না (driver দেয় Selenium Manager)।
+- **ফল:** backend ১৪৪, automation ১১৬ component scan হয়, ০টা ঝুঁকিপূর্ণ। দুই image-এই সব সবুজ।
+
+**Interview-এ:**
+> "CI-কে runner image-এ pin করে রেখেছি, আর পরের image-এ একটা canary চালাই। প্রথম run-এই canary দেখাল, আমাদের dependency scanner rate limit পেলে চুপচাপ অর্ধেক dependency বাদ দেয়, আর একটা CVSS 9.1 লাইব্রেরি ধরা পড়ছিল না। আমি scanner-কে Maven-এর তৈরি SBOM দিই, আর gate-টা নিজেই প্রমাণ করে যে সে fail করতে পারে: একটা জানা ঝুঁকিপূর্ণ নমুনা প্রতিবার ধরতে হয়। Security tool-কেও আমি টেস্টের মতো যাচাই করি।"
+
 ## এখন CI-র gate-গুলো (প্রতিটা push-এ)
-1. Backend টেস্ট (২৭৯টা) আর JaCoCo coverage gate
+1. Backend টেস্ট (২৮৪টা) আর JaCoCo coverage gate
 2. Traceability matrix check
-3. API, DB, BDD আর UI টেস্ট (২৬৯টা), আর k6 smoke, flash-sale ও catalog
+3. API, DB, BDD আর UI টেস্ট (২৮৭টা), আর k6 smoke, flash-sale ও catalog
 4. Mutation testing (PIT): score ≥ 84%
-5. পুরো app Docker-এ চালিয়ে তার বিরুদ্ধে ৪৪টা smoke টেস্ট
-6. Jenkinsfile lint
-7. OWASP ZAP আর OSV-Scanner
-8. সব ঠিক থাকলে Allure, coverage আর mutation রিপোর্ট GitHub Pages-এ প্রকাশ
+5. Firefox আর Edge-এ ২০টা UI টেস্ট (flaky হলে আলাদা করে দেখায়)
+6. পুরো app Docker-এ চালিয়ে তার বিরুদ্ধে ৪৪টা smoke টেস্ট
+7. Jenkinsfile lint
+8. OWASP ZAP, OpenAPI breaking-change gate, আর SBOM-ভিত্তিক OSV scan (completeness check + self-test)
+9. সব ঠিক থাকলে Allure, coverage আর mutation রিপোর্ট GitHub Pages-এ প্রকাশ
+10. প্রতি সোমবার: একই pipeline পরের runner image-এ (canary)

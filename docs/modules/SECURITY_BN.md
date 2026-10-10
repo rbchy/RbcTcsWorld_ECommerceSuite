@@ -44,15 +44,17 @@
   - কোন নিয়ম ভাঙলে build fail হবে, সেটা `security/zap/zap-rules.tsv`-এ লেখা। যেমন SQL injection, XSS, path traversal, stack trace দেখানো, বা security header না থাকা।
   - **ফলাফল:** medium বা high কিছু পাওয়া যায়নি। Low-এর একটা ছিল (CORP header), সেটা ঠিক করা হয়েছে।
 - **OSV-Scanner:**
-  - `pom.xml` আর `package-lock.json` পড়ে লাইব্রেরিগুলোকে OSV database-এর সাথে মেলায়।
+  - Maven-এর তৈরি CycloneDX SBOM (backend আর automation, test scope সহ) আর `package-lock.json` পড়ে লাইব্রেরিগুলোকে OSV database-এর সাথে মেলায়।
+  - নিজেকেও যাচাই করে: SBOM অসম্পূর্ণ হলে, বা জানা ঝুঁকিপূর্ণ নমুনা (log4j-core 2.14.1) ধরতে না পারলে job লাল (DEF-021, বিস্তারিত [CICD_BN.md](CICD_BN.md))।
   - প্রতিটা ঝুঁকিপূর্ণ লাইব্রেরির জন্য run-এর পেজে annotation দেখায়: **"fixed in X"**, মানে কোন version-এ upgrade করলে সমস্যা মিটবে।
   - CVSS ≥ 9 (critical) কোনো দুর্বলতার fix থাকলে **build fail হয়**।
 - **Newest versions:** pin করা লাইব্রেরিগুলোর নতুন patch Maven Central-এ এসেছে কি না, সেটাও দেখায়।
 - **নিরাপত্তার জন্য action pin করা:** third-party action (osv-scanner) commit SHA দিয়ে pin করা। কেউ পরে tag সরিয়ে দিলেও আমাদের CI-তে ক্ষতিকর কোড চলবে না।
 
-## দুটো শিক্ষণীয় ঘটনা
+## তিনটা শিক্ষণীয় ঘটনা
 1. **Advisory অনুযায়ী Tomcat-এর fix ছিল 10.1.58, কিন্তু Maven Central-এ ওই version পাওয়া গেল না** (build fail হয়েছিল)। শিক্ষা: advisory-তে লেখা version অন্ধভাবে বসানো যায় না, আগে দেখতে হয় সেটা আসলে প্রকাশিত হয়েছে কি না। এজন্য CI-তে "newest versions" ধাপ যোগ করা হয়েছে, আর সেখান থেকে 10.1.60 বসানো হয়েছে।
 2. **`Retry-After` কখনো 899 আসছিল, 900 নয়।** কারণ lock হওয়া আর যাচাইয়ের মাঝে কয়েক মিলিসেকেন্ড চলে যায়, আর সেকেন্ড নিচের দিকে round হচ্ছিল। এখন উপরের দিকে round হয়, যাতে client ঠিক ততক্ষণ অপেক্ষা করলেই আবার চেষ্টা করতে পারে।
+3. **Scanner নিজেই অন্ধ হয়ে গিয়েছিল (DEF-021)।** Maven Central rate limit দিলে OSV চুপচাপ শুধু সরাসরি dependency দেখত, আর একটা CVSS 9.1 লাইব্রেরি "০টা ঝুঁকি" রিপোর্টের আড়ালে ছিল। এখন scan চলে Maven-এর তৈরি SBOM-এর উপর, completeness check আর self-test সহ।
 
 ## জেনেশুনে মেনে নেওয়া ঝুঁকি (documented trade-offs)
 - **Lockout:** কেউ অন্যের ইমেইল জানলে ১৫ মিনিটের জন্য সেই account lock করে দিতে পারে। স্থায়ী lock না রেখে অস্থায়ী রাখায় ক্ষতি কম।
