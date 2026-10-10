@@ -299,17 +299,10 @@ jobs:
         with: { distribution: temurin, java-version: '21', cache: maven }
 
       # ---------- dependencies with known vulnerabilities (SCA) ----------
-      # OSV-Scanner (Google) checks pom.xml and package-lock.json against the OSV vulnerability database.
-      # Third-party action pinned to a full commit SHA (v2.3.0): a moved tag cannot change what runs here.
-      - name: OSV-Scanner - known vulnerabilities in dependencies
-        uses: google/osv-scanner-action/osv-scanner-action@b77c075a1235514558f0eb88dbd31e22c45e0cd2
-        continue-on-error: true      # report-only: findings are listed as annotations + artifact below
-        with:
-          scan-args: |-
-            --format=json
-            --output=osv-results.json
-            --recursive
-            ./
+      # Maven-resolved CycloneDX SBOMs scanned by OSV-Scanner, with a completeness check and a self-test
+      # (DEF-021: OSV's own Maven resolution fell back to direct dependencies on HTTP 429 and missed findings).
+      - name: SBOM + OSV-Scanner - known vulnerabilities in dependencies
+        run: security/osv-scan.sh
       - name: Dependency findings as annotations
         if: always()
         run: security/osv-summary.sh osv-results.json
