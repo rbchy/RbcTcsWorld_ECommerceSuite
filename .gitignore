@@ -24,3 +24,4 @@ security/zap/openapi.json
 # Allure command-line tool downloaded by allure-maven (allure:serve / allure:report)
 automation/.allure/
 qa-reports/
+docker-version.txt
