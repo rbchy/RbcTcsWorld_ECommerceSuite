@@ -15,9 +15,15 @@ jobs:
         run: |
           mvn -B -q -f automation/pom.xml dependency:tree -Dincludes=org.freemarker,org.mozilla,org.apache.httpcomponents.client5,org.apache.httpcomponents.core5 -DoutputFile=$PWD/tree.txt || true
           sed 's/%/%25/g' tree.txt | tr '\n' '|' | sed 's/^/::notice title=tree ${{ matrix.os }}::/'; echo
-      - name: osv-scanner with logs
+      - name: osv-scanner variants
         run: |
-          docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:v2.3.0 scan source -r --verbosity=info --format=json --output=/src/out.json /src/automation 2> err.txt || true
-          grep -iv '^$' err.txt | tail -25 | sed 's/%/%25/g' | tr '\n' '|' | sed 's/^/::notice title=log ${{ matrix.os }}::/'; echo
-          jq -r '[.results[]?.packages[]?.package.name]|join(", ")' out.json | sed 's/^/::notice title=found ${{ matrix.os }}::/'
-          docker --version | sed 's/^/::notice title=docker ${{ matrix.os }}::/'
+          for v in "-r /src" "-r /src/automation"; do
+            for n in 1 2; do
+              docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:v2.3.0 scan source $v --all-packages --format=json --output=/src/out.json 2> err.txt || true
+              c=$(jq -r '[.results[]? | "\(.source.path|sub("/src/";"")): \(.packages|length) pkgs"] | join(", ")' out.json)
+              vul=$(jq -r '[.results[]?.packages[]? | select((.vulnerabilities//[])|length>0) | .package.name] | unique | join(" ")' out.json)
+              e=$(grep -ci 'error\|fail\|429\|too many' err.txt || true)
+              echo "::notice title=${{ matrix.os }} [$v] try $n::$c | vulnerable: $vul | error lines: $e"
+              grep -i 'error\|fail\|429' err.txt | head -3 | sed 's/%/%25/g; s/^/::notice title=${{ matrix.os }} err::/' || true
+            done
+          done
