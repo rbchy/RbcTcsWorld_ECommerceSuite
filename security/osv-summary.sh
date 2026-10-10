@@ -14,7 +14,7 @@ jq -r '
     | map(select(.f != null and (.i | vkey) <= ($cur | vkey) and ($cur | vkey) < (.f | vkey)) | .f);
   [ .results[]? | .source.path as $src | .packages[]? | .package.name as $name | .package.version as $cur | {
       pkg: "\(.package.name)@\(.package.version)",
-      src: ($src | sub(".*/(?<d>[^/]+/[^/]+)$"; "\(.d)")),
+      src: ($src | sub("/target/bom\\.cdx\\.json$"; "/pom.xml") | sub(".*/(?<d>[^/]+/[^/]+)$"; "\(.d)")),
       ids: [ .groups[]?.ids[0] ],
       max: ([ .groups[]?.max_severity | select(. != null and . != "") | tonumber ] | max // 0),
       fix: ([ .vulnerabilities[]?.affected[]? | select(.package.name == $name) | .ranges[]? | fixes($cur)[] ]

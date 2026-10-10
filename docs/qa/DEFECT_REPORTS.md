@@ -28,6 +28,7 @@ only after a regression test was added; the test is named in the report. Test-co
 | [DEF-018](#def-018) | Storefront fails WCAG 2.1 AA on every page (contrast, labels, page language) | Product - accessibility | High | P1 | axe-core accessibility tests (written first) | Closed |
 | [DEF-019](#def-019) | Edge does not start in CI ("Chrome instance exited"), Firefox fine | Test infrastructure | Medium | P2 | New cross-browser CI job | Closed |
 | [DEF-020](#def-020) | Edge and Firefox UI tests cannot get a driver on the Jenkins Mac (Selenium Manager) | Test infrastructure | Medium | P2 | Jenkins run with the BROWSER parameter | Closed |
+| [DEF-021](#def-021) | Dependency scan silently missed 5 vulnerable libraries (one CVSS 9.1) when Maven Central rate-limited it | Test infrastructure | High | P1 | Runner canary (Ubuntu 26) | Closed |
 
 **Where defects were found** - one reason each test layer exists:
 
@@ -45,6 +46,7 @@ only after a regression test was added; the test is named in the report. Test-co
 | Full regression during a framework upgrade (Spring Boot 4) | DEF-016, DEF-017 |
 | Accessibility tests (axe-core, WCAG 2.1 AA) | DEF-018 |
 | Cross-browser CI (Firefox, Edge) | DEF-019, DEF-020 |
+| Runner canary (next CI image) | DEF-021 |
 
 ---
 
@@ -459,6 +461,41 @@ error: bad magic value encountered`.
 (`brew install --cask firefox`).
 **Lesson:** a pinned test library also pins its download URLs - external services change, so the browser
 tooling needs the same update cadence as the application dependencies.
+
+---
+
+## DEF-021
+**Dependency scan silently missed 5 vulnerable libraries (one CVSS 9.1) when Maven Central rate-limited it**
+
+| Field | Value |
+|---|---|
+| Severity / Priority | High / P1 - a security gate reported "0 vulnerable packages" while a critical one was on the classpath; no product impact (test-scope libraries) |
+| Environment | GitHub Actions, OSV-Scanner 2.3.0 (`--recursive` over `pom.xml` and `package-lock.json`) |
+
+**How it was found:** the new runner canary (whole pipeline on `ubuntu-26.04`) reported 5 vulnerable packages
+in `automation/pom.xml`; the normal run on the same commit, minutes earlier, reported 0. A gate that gives two
+answers for one commit is itself a defect.
+**Evidence (diagnosis runs on both images, same commit):**
+- OSV log: `Maven registry query status: 429` for BOM/parent POMs, then `failed to resolve transitive
+  dependencies ... falling back to offline extraction`.
+- Packages seen in `automation/pom.xml`: **14** after the fallback vs. **130** when resolution worked
+  (backend: 16 vs. 144). Which run hit the rate limit was random, not tied to the Ubuntu version.
+- `mvn dependency:tree` confirmed all five on the test classpath: freemarker 2.3.33 (CVSS 9.1, via
+  allure-rest-assured), rhino 1.7.7.2 (via json-schema-validator), httpclient5 / httpcore5 / httpcore5-h2
+  (via axe-core -> WebDriverManager).
+
+**Root cause:** OSV-Scanner resolves Maven transitive dependencies itself; on HTTP 429 it logs a warning,
+scans only the direct dependencies and still ends normally. The gate trusted a partial input.
+**Fix:**
+- `security/osv-scan.sh` (GitHub Actions and Jenkins): Maven resolves the full tree and writes a CycloneDX SBOM
+  per module (test scope included); OSV scans only these SBOMs and the npm lockfile.
+- Completeness check (an SBOM with fewer than 50 components fails the job) and a self-test (a fixture SBOM with
+  log4j-core 2.14.1 must be reported, otherwise the vulnerability database was not reachable).
+- Libraries: freemarker 2.3.35, rhino 1.7.15.1, WebDriverManager excluded (unused - Selenium Manager provides drivers).
+
+**Result:** 0 vulnerable packages from complete inputs (backend 144, automation 116 components); contract,
+accessibility and all other tests green on both runner images.
+**Lesson:** a security gate needs the same checks as a test: complete input, and proof that it can fail.
 
 ---
 

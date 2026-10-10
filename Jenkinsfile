@@ -120,9 +120,9 @@ pipeline {
             when { expression { params.RUN_SECURITY } }
             steps {
                 sh '''
-                    # OSV-Scanner: known CVEs in pom.xml / package-lock.json (exceptions: backend/osv-scanner.toml)
-                    docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:v2.3.0 \
-                        scan source --recursive --format json --output /src/osv-results.json /src || true
+                    # SBOM (Maven) + OSV-Scanner with completeness check and self-test (DEF-021);
+                    # exceptions: backend/osv-scanner.toml
+                    security/osv-scan.sh
                     security/osv-summary.sh osv-results.json
 
                     # API contract (provider side): no breaking change against the approved OpenAPI baseline

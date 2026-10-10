@@ -23,7 +23,7 @@ Author: **RB Chowdhury**, QA Automation Engineer / SDET - [GitHub](https://githu
 2. **Live reports:** [Allure](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/) ·
    [JaCoCo coverage](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/) ·
    [PIT mutation](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/mutation/)
-3. **Defects the tests actually found:** [Defect Reports](docs/qa/DEFECT_REPORTS.md) - 20 entries, each with
+3. **Defects the tests actually found:** [Defect Reports](docs/qa/DEFECT_REPORTS.md) - 21 entries, each with
    evidence, root cause, fix and regression test.
 4. **How release decisions are made:** [Test Strategy](docs/qa/TEST_STRATEGY.md) ·
    [Risk Register](docs/qa/RISK_REGISTER.md) · [Test Summary Report (GO / NO-GO)](docs/qa/TEST_SUMMARY_REPORT.md)
@@ -53,7 +53,7 @@ A gate fails the build. Nothing is "reported only" unless the table says so.
 | 8 | Cross-browser | 100 % pass | 20 / 20 in Firefox and Edge | Selenium, CI matrix |
 | 9 | Performance | SLO thresholds (p95, error rate, no overselling) | p95 16-72 ms, 0 % errors | k6 |
 | 10 | DAST | 0 Medium / High | 0 | OWASP ZAP API scan |
-| 11 | Dependencies | 0 known vulnerabilities, 0 open exceptions | 0 | OSV-Scanner |
+| 11 | Dependencies | 0 known vulnerabilities, 0 open exceptions | 0 (complete SBOMs, self-test passed) | OSV-Scanner on CycloneDX SBOMs |
 | 12 | Containers | stack healthy, smoke tests pass | 44 / 44 | Docker Compose |
 | 13 | Traceability | every requirement has a test | 63 / 63 | `docs/qa/check_rtm.py` |
 | 14 | Pipeline definition | Jenkinsfile valid | validated by a real Jenkins | declarative linter |
@@ -127,7 +127,9 @@ flowchart LR
 ```
 
 The same stages run in a [Jenkinsfile](Jenkinsfile) with parameters (`BROWSER`, `RUN_UI`, `RUN_MUTATION`,
-`RUN_SECURITY`). Two CI systems on two CPU architectures (Linux x86 and macOS ARM) have already paid for
+`RUN_SECURITY`). GitHub jobs are pinned to `ubuntu-24.04`; a weekly [runner canary](.github/workflows/runner-canary.yml)
+runs the same pipeline on the next image first. Browser tests get one rerun, and a pass on the rerun is reported
+as FLAKY with a count instead of disappearing. Two CI systems on two CPU architectures (Linux x86 and macOS ARM) have already paid for
 themselves: four defects appeared on only one of them (DEF-014, DEF-015, DEF-019, DEF-020).
 
 ---
@@ -146,6 +148,7 @@ All entries are in [Defect Reports](docs/qa/DEFECT_REPORTS.md). A selection:
 | DEF-017 | ZAP + API test | `?=x` query string returned 500 | 400, regression test with a raw HTTP client |
 | DEF-018 | axe-core (written first) | All 8 pages failed WCAG 2.1 AA (contrast, labels, page language) | 0 serious / critical |
 | DEF-020 | Jenkins on macOS | Edge / Firefox drivers could not be downloaded | Selenium 4.25 -> 4.49 |
+| DEF-021 | Runner canary | The dependency scan itself went blind on a rate limit and missed a CVSS 9.1 library | SBOM-based scan with completeness check and self-test |
 
 Two critical Spring CVEs had no patch for Spring Boot 3.5. They were accepted for a limited time (reason,
 expiry date, guard test) and then removed by upgrading to Spring Boot 4.1 on a branch. The gates caught
@@ -234,7 +237,7 @@ backend/        Spring Boot API, unit + integration tests, PIT profile
 frontend/       React storefront (data-testid on every element a test touches)
 automation/     API clients, Page Objects, Cucumber features, contract schemas, test data fixtures
 performance/    k6 scripts with SLO thresholds
-security/       ZAP rules, OSV configuration, version check
+security/       ZAP rules, SBOM + OSV scan with self-test, version check
 ci/             QA dashboard generator for Jenkins
 docs/qa/        Test strategy, plan, risk register, RTM, defect reports, test summary report
 docs/modules/   Module guides (Bangla), one per feature or test layer
@@ -244,7 +247,7 @@ docs/modules/   Module guides (Bangla), one per feature or test layer
 
 **QA documents (English):** [Strategy](docs/qa/TEST_STRATEGY.md) · [Plan](docs/qa/TEST_PLAN.md) ·
 [Risks](docs/qa/RISK_REGISTER.md) · [Traceability (63 requirements)](docs/qa/TRACEABILITY_MATRIX.md) ·
-[Defects (20)](docs/qa/DEFECT_REPORTS.md) · [Test Summary Report](docs/qa/TEST_SUMMARY_REPORT.md)
+[Defects (21)](docs/qa/DEFECT_REPORTS.md) · [Test Summary Report](docs/qa/TEST_SUMMARY_REPORT.md)
 
 **Module guides (Bangla):**
 
