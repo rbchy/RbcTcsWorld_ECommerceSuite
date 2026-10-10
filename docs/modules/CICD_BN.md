@@ -135,6 +135,14 @@ GitHub ঘোষণা দিয়েছিল, ১৯ অক্টোবর �
 **Interview-এ:**
 > "CI-কে runner image-এ pin করে রেখেছি, আর পরের image-এ একটা canary চালাই। প্রথম run-এই canary দেখাল, আমাদের dependency scanner rate limit পেলে চুপচাপ অর্ধেক dependency বাদ দেয়, আর একটা CVSS 9.1 লাইব্রেরি ধরা পড়ছিল না। আমি scanner-কে Maven-এর তৈরি SBOM দিই, আর gate-টা নিজেই প্রমাণ করে যে সে fail করতে পারে: একটা জানা ঝুঁকিপূর্ণ নমুনা প্রতিবার ধরতে হয়। Security tool-কেও আমি টেস্টের মতো যাচাই করি।"
 
+### Jenkins build ৪৬ মিনিট আটকে ছিল (build #19)
+- **কী হয়েছিল:** build প্রথম stage "Tools on the agent"-এ `docker version`-এ আটকে ছিল। Docker Desktop সাড়া দিচ্ছিল না, আর এই command তখন fail না করে অনির্দিষ্টকাল অপেক্ষা করে। পুরো build-এর সময়সীমা ছিল একটাই, ৬০ মিনিট, তাই কোন stage দায়ী সেটা সঙ্গে সঙ্গে বোঝা যেত না।
+- **সমাধান:**
+  - Docker-কে ৬০ সেকেন্ড সময় দেওয়া হয়। উত্তর না এলে build থামে এই বার্তা দিয়ে: "DOCKER DOES NOT ANSWER … restart Docker Desktop"।
+  - **প্রতিটা stage-এর নিজের সময়সীমা** আছে। যেমন Tools ৩ মিনিট, PIT ২০ মিনিট, Automation ৩০ মিনিট, ZAP-সহ Security ৩০ মিনিট, Extra k6 ৬০ মিনিট (soak ৩০ মিনিট চলে)। আটকালে ঠিক সেই stage লাল হয়।
+  - পুরো build-এর সীমা এখন ১২০ মিনিট, শুধু শেষ নিরাপত্তা জাল হিসেবে। এতে soak বাছলেও ভালো build "aborted" হয় না।
+- **হাতে কী করবেন:** Docker Desktop → Quit → আবার খুলুন → Terminal-এ `docker version` দিয়ে দেখে নিন, তারপর build চালান।
+
 ## এখন CI-র gate-গুলো (প্রতিটা push-এ)
 1. Backend টেস্ট (২৮৪টা) আর JaCoCo coverage gate
 2. Traceability matrix check

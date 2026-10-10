@@ -12,7 +12,7 @@ pipeline {
 
     options {
         timestamps()
-        timeout(time: 60, unit: 'MINUTES')
+        timeout(time: 120, unit: 'MINUTES')            // safety net only - every stage has its own, tighter limit
         buildDiscarder(logRotator(numToKeepStr: '20'))
         disableConcurrentBuilds()                       // one stack per agent: fixed ports 5432/8081/5173
     }
@@ -37,6 +37,7 @@ pipeline {
 
     stages {
         stage('Tools on the agent') {
+            options { timeout(time: 3, unit: 'MINUTES') }
             steps {
                 // fail in seconds with a clear message instead of in the middle of the pipeline
                 sh '''
@@ -44,17 +45,30 @@ pipeline {
                       command -v "$t" >/dev/null || { echo "MISSING TOOL: $t (PATH=$PATH)"; exit 1; }
                     done
                     java -version 2>&1 | head -1
-                    docker version --format 'Docker {{.Server.Version}}' || { echo "Docker Desktop is not running"; exit 1; }
+                    # "docker version" waits forever when Docker Desktop hangs (build #19 sat here for 46 minutes):
+                    # give it 60 seconds, then fail with a message that says what to do
+                    docker version --format 'Docker {{.Server.Version}}' > docker-version.txt 2>&1 &
+                    pid=$!
+                    for i in $(seq 1 60); do kill -0 $pid 2>/dev/null || break; sleep 1; done
+                    if kill -0 $pid 2>/dev/null; then
+                      kill $pid
+                      echo "DOCKER DOES NOT ANSWER within 60 s - restart Docker Desktop (Quit + open), check 'docker version' in Terminal, run the build again"
+                      exit 1
+                    fi
+                    wait $pid || { cat docker-version.txt; echo "Docker Desktop is not running - start it and run the build again"; exit 1; }
+                    cat docker-version.txt
                     docker compose version
                 '''
             }
         }
 
         stage('Traceability matrix') {
+            options { timeout(time: 2, unit: 'MINUTES') }
             steps { sh 'python3 docs/qa/check_rtm.py' }
         }
 
         stage('Backend: unit + integration + coverage gate') {
+            options { timeout(time: 20, unit: 'MINUTES') }
             steps { sh 'mvn -B -f backend/pom.xml clean verify' }
             post {
                 always {
@@ -66,6 +80,7 @@ pipeline {
         }
 
         stage('Mutation testing (PIT)') {
+            options { timeout(time: 20, unit: 'MINUTES') }
             when { expression { params.RUN_MUTATION } }
             steps {
                 sh 'mvn -B -f backend/pom.xml -Pmutation -Djacoco.skip=true test-compile org.pitest:pitest-maven:mutationCoverage'
@@ -79,6 +94,7 @@ pipeline {
         }
 
         stage('Start the whole app in Docker') {
+            options { timeout(time: 15, unit: 'MINUTES') }
             steps {
                 sh "${COMPOSE} down -v --remove-orphans || true"
                 sh "${COMPOSE} up -d --build --wait --wait-timeout 300"
@@ -87,6 +103,7 @@ pipeline {
         }
 
         stage('Automation: API + DB + BDD + UI') {
+            options { timeout(time: 30, unit: 'MINUTES') }
             steps {
                 script {
                     def filter = params.RUN_UI ? '' : '-DexcludedGroups=ui'
@@ -104,6 +121,7 @@ pipeline {
         }
 
         stage('Performance gates (k6)') {
+            options { timeout(time: 10, unit: 'MINUTES') }
             steps {
                 sh '''
                     performance/k6run.sh -e DURATION=30s performance/tests/smoke.js
@@ -117,6 +135,7 @@ pipeline {
         }
 
         stage('Security: dependencies + API contract + OWASP ZAP') {
+            options { timeout(time: 30, unit: 'MINUTES') }
             when { expression { params.RUN_SECURITY } }
             steps {
                 sh '''
@@ -154,6 +173,7 @@ pipeline {
         }
 
         stage('Extra k6 test') {
+            options { timeout(time: 60, unit: 'MINUTES') }
             when { expression { params.K6_EXTRA != 'none' } }
             steps {
                 sh "performance/k6run.sh performance/tests/${params.K6_EXTRA}.js"
