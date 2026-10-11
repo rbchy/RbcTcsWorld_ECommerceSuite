@@ -76,11 +76,16 @@ docker compose --profile app down              # বন্ধ (-v দিলে d
 - **কোথায় দেখবেন:** build পাতার বাম দিকে **QA Reports** link। একই পাতা `qa-reports/` নামে artifact হিসেবেও থাকে।
 - **একবার করতে হবে:**
   1. **HTML Publisher plugin install করুন:** Manage Jenkins → Plugins → Available plugins → `HTML Publisher` → Install। Plugin না থাকলেও build ভাঙবে না, শুধু link আসবে না।
-  2. **Allure আর Cucumber-এর জন্য JavaScript চালু করুন (স্থায়ী উপায়, Jenkins restart-এর পরেও থাকে):**
-     - এ দুটো রিপোর্টের JavaScript লাগে, কিন্তু Jenkins নিজের ঠিকানা থেকে দেখানো ফাইলে CSP দিয়ে JavaScript আটকায়। তাই পাতা সাদা দেখায়।
-     - **Manage Jenkins → System → Resource Root URL** ঘরে লিখুন `http://127.0.0.1:8080/` → **Save**।
-     - Jenkins-কে সবসময় `http://localhost:8080` দিয়ে খুলবেন। রিপোর্টগুলো তখন আলাদা ঠিকানা (`127.0.0.1`) থেকে আসে, যেখানে JavaScript চলতে পারে, অথচ Jenkins-এর নিজের পাতা সুরক্ষিত থাকে। এটাই Jenkins-এর সুপারিশ করা উপায়।
-     - পুরনো দ্রুত উপায়: Script Console-এ `System.setProperty("hudson.model.DirectoryBrowserSupport.CSP", "")`। এটা Jenkins restart হলে মুছে যায়, তাই restart-এর পরে রিপোর্ট আবার সাদা দেখায়।
+  2. **Allure আর Cucumber-এর জন্য JavaScript চালু করুন (স্থায়ী, restart-এর পরেও থাকে):**
+     - এ দুটো রিপোর্টের JavaScript লাগে, কিন্তু Jenkins-এর CSP সেটা আটকায়, তাই পাতা সাদা দেখায়।
+     - Jenkins প্রতিবার চালু হওয়ার সময় যে script চালায়, সেখানে নিয়মটা রাখুন (Terminal-এ একবার):
+       ```bash
+       mkdir -p ~/.jenkins/init.groovy.d
+       echo 'System.setProperty("hudson.model.DirectoryBrowserSupport.CSP", "")' > ~/.jenkins/init.groovy.d/report-csp.groovy
+       ```
+     - এখনই কাজে লাগাতে: Manage Jenkins → Script Console-এ একই লাইন চালান, অথবা `http://localhost:8080/safeRestart`।
+     - ⚠️ শুধু নিজের ব্যক্তিগত Jenkins-এ। শেয়ার করা Jenkins-এ Allure Jenkins plugin বা ঠিকমতো সেট করা Resource Root URL ব্যবহার করুন।
+     - "Resource Root URL" ঘরে কিছু লেখা থাকলে মুছে দিন: Jenkins URL ঠিকমতো সেট না থাকলে HTML Publisher-এর পাতা "Not Found" দেখায়।
 - **Dashboard পাতাটা নিজে CSP বদলানো ছাড়াই দেখা যায়:** এতে কোনো JavaScript বা inline CSS নেই।
 
 ## ৪. একটা আসল ঘটনা: নতুন critical CVE (ধাপ ৭ চলাকালীন)
