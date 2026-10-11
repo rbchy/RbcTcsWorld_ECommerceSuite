@@ -59,6 +59,38 @@ pipeline {
                     cat docker-version.txt
                     docker compose version
                 '''
+                // the chosen browser must be able to start - otherwise every UI test waits ~40 s for it (build #21:
+                // BROWSER=safari without "Allow remote automation" = 20 errors after 12 minutes)
+                sh '''
+                    [ "${RUN_UI:-true}" = "true" ] || exit 0
+                    case "${BROWSER:-chrome}" in
+                      chrome)  app="Google Chrome" ;;
+                      firefox) app="Firefox" ;;
+                      edge)    app="Microsoft Edge" ;;
+                      safari)  app="Safari" ;;
+                    esac
+                    if [ "$(uname)" = "Darwin" ] && [ ! -d "/Applications/$app.app" ]; then
+                      echo "BROWSER NOT INSTALLED: /Applications/$app.app is missing - install it (e.g. brew install --cask firefox) or choose another BROWSER"
+                      exit 1
+                    fi
+                    if [ "${BROWSER:-chrome}" = "safari" ]; then
+                      safaridriver -p 4445 > safaridriver.log 2>&1 &
+                      sd=$!
+                      sleep 2
+                      resp=$(curl -s -m 20 -X POST http://localhost:4445/session -H 'Content-Type: application/json' \\
+                             -d '{"capabilities":{"alwaysMatch":{"browserName":"safari"}}}' || true)
+                      sid=$(printf '%s' "$resp" | jq -r '.value.sessionId // empty' 2>/dev/null || true)
+                      [ -n "$sid" ] && curl -s -m 10 -X DELETE "http://localhost:4445/session/$sid" > /dev/null || true
+                      kill $sd 2>/dev/null || true
+                      if [ -z "$sid" ]; then
+                        echo "SAFARI NOT READY: Safari > Settings > Advanced > 'Show features for web developers', then Developer > 'Allow remote automation'; run 'sudo safaridriver --enable' once; keep the Mac unlocked during the build"
+                        printf '%s\\n' "$resp" | head -c 400; echo
+                        exit 1
+                      fi
+                      echo "Safari: WebDriver session opened and closed - ready"
+                    fi
+                    echo "Browser for UI tests: ${BROWSER:-chrome} ($app)"
+                '''
             }
         }
 
