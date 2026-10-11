@@ -151,7 +151,7 @@ GitHub ঘোষণা দিয়েছিল, ১৯ অক্টোবর �
 
 ### Jenkins-এ JDK 21 স্থির করা
 - **সমস্যা:** Jenkins `PATH`-এ প্রথমে যে `java` পেত সেটাই ব্যবহার করত। একটা build-এ Java 26, পরেরটায় Java 23। GitHub Actions চলে Temurin 21-এ, তাই দুই CI একই Java-তে চলছিল না।
-- **এখন:** Jenkinsfile-এ `tools { jdk 'jdk-21' }`। JDK 21 `PATH`-এর একদম শুরুতে বসে, আর "Tools on the agent" stage দেখে নেয় version সত্যিই 21 কি না। না হলে build থামে, setup-এর নির্দেশনাসহ।
+- **এখন:** Jenkinsfile-এ `tools { jdk 'jdk-21' }`। এটা `JAVA_HOME` ঠিক করে দেয়, আর Maven সেটাই ব্যবহার করে (PATH-এর প্রথম `java` নয়)। "Tools on the agent" stage `$JAVA_HOME/bin/java` আর `mvn -v` দিয়ে দেখে নেয় version সত্যিই 21 কি না। না হলে build থামে, setup-এর নির্দেশনাসহ।
 - **একবারের setup (Mac):**
   1. JDK 21 install করুন, না থাকলে: `brew install --cask temurin@21`
   2. Path বের করুন: `/usr/libexec/java_home -v 21`
