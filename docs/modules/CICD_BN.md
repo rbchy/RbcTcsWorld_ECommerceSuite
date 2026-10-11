@@ -149,6 +149,15 @@ GitHub ঘোষণা দিয়েছিল, ১৯ অক্টোবর �
   - পুরো build-এর সীমা এখন ১২০ মিনিট, শুধু শেষ নিরাপত্তা জাল হিসেবে। এতে soak বাছলেও ভালো build "aborted" হয় না।
 - **হাতে কী করবেন:** Docker Desktop → Quit → আবার খুলুন → Terminal-এ `docker version` দিয়ে দেখে নিন, তারপর build চালান।
 
+### Jenkins-এ JDK 21 স্থির করা
+- **সমস্যা:** Jenkins `PATH`-এ প্রথমে যে `java` পেত সেটাই ব্যবহার করত। একটা build-এ Java 26, পরেরটায় Java 23। GitHub Actions চলে Temurin 21-এ, তাই দুই CI একই Java-তে চলছিল না।
+- **এখন:** Jenkinsfile-এ `tools { jdk 'jdk-21' }`। JDK 21 `PATH`-এর একদম শুরুতে বসে, আর "Tools on the agent" stage দেখে নেয় version সত্যিই 21 কি না। না হলে build থামে, setup-এর নির্দেশনাসহ।
+- **একবারের setup (Mac):**
+  1. JDK 21 install করুন, না থাকলে: `brew install --cask temurin@21`
+  2. Path বের করুন: `/usr/libexec/java_home -v 21`
+  3. **Manage Jenkins → Tools → JDK installations → Add JDK**। Name দিন `jdk-21`, "Install automatically" টিক তুলে দিন, আর JAVA_HOME-এ ২ নম্বর ধাপের path দিন → **Save**।
+- **GitHub-এর lint Jenkins-এও** একই নামের JDK রাখা হয়েছে (`.github/jenkins/init.groovy.d/jdk-21.groovy`), তাই Jenkinsfile যাচাই দুই জায়গায় একই নিয়মে হয়।
+
 ### Browser আগেই যাচাই (build #21)
 - **কী হয়েছিল:** `BROWSER=safari` দিয়ে build চলেছিল, কিন্তু Safari-তে "Allow remote automation" চালু ছিল না। ২০টা UI টেস্ট প্রতিটা ~৪০ সেকেন্ড অপেক্ষা করে error দিয়েছিল, প্রায় ১২ মিনিট নষ্ট।
 - **এখন "Tools on the agent" stage আগেই যাচাই করে:**
