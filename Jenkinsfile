@@ -33,8 +33,7 @@ pipeline {
     environment {
         // macOS agents: Homebrew (mvn, k6, jq) and Docker Desktop's CLI, which lives in ~/.docker/bin when
         // Docker Desktop was installed "per user" - Jenkins does not read the login shell's PATH.
-        // JDK 21 from "tools" first: Homebrew's own "java" in /opt/homebrew/bin must not win
-        PATH = "${env.JAVA_HOME}/bin:/opt/homebrew/bin:/usr/local/bin:${env.HOME}/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:${env.PATH}"
+        PATH = "/opt/homebrew/bin:/usr/local/bin:${env.HOME}/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:${env.PATH}"
         BASE_URL = 'http://localhost:8081'
         UI_URL = 'http://localhost:5173'
         COMPOSE = 'docker compose --profile app'
@@ -50,11 +49,15 @@ pipeline {
                     for t in java mvn docker python3 jq curl; do
                       command -v "$t" >/dev/null || { echo "MISSING TOOL: $t (PATH=$PATH)"; exit 1; }
                     done
-                    java -version 2>&1 | head -1
-                    java -version 2>&1 | head -1 | grep -q '"21' || {
-                      echo "WRONG JAVA: the build must run on JDK 21 (as in GitHub Actions). Manage Jenkins > Tools > JDK installations: name 'jdk-21', JAVA_HOME = output of '/usr/libexec/java_home -v 21' (install: brew install --cask temurin@21)"
+                    # Maven uses JAVA_HOME (set by "tools { jdk 'jdk-21' }"), not the first "java" on the PATH
+                    # (Homebrew may put another JDK there; the PATH set in "environment" also hides the tool's bin)
+                    echo "JAVA_HOME=$JAVA_HOME"
+                    "$JAVA_HOME/bin/java" -version 2>&1 | head -1
+                    "$JAVA_HOME/bin/java" -version 2>&1 | head -1 | grep -q '"21' || {
+                      echo "WRONG JAVA: JDK installation 'jdk-21' points to $JAVA_HOME, which is not Java 21. Manage Jenkins > Tools > JDK installations > jdk-21: JAVA_HOME = output of '/usr/libexec/java_home -v 21' (install: brew install --cask temurin@21)"
                       exit 1
                     }
+                    mvn -v | grep -i '^Java version'
                     # "docker version" waits forever when Docker Desktop hangs (build #19 sat here for 46 minutes):
                     # give it 60 seconds, then fail with a message that says what to do
                     docker version --format 'Docker {{.Server.Version}}' > docker-version.txt 2>&1 &
