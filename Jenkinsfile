@@ -10,6 +10,11 @@
 pipeline {
     agent any
 
+    // Same JDK as GitHub Actions (Temurin 21). "jdk-21" is a JDK installation in Manage Jenkins > Tools
+    // (JAVA_HOME = output of /usr/libexec/java_home -v 21). Without it, Jenkins used whatever "java" came
+    // first on the PATH: Java 26 in one build, Java 23 in the next.
+    tools { jdk 'jdk-21' }
+
     options {
         timestamps()
         timeout(time: 120, unit: 'MINUTES')            // safety net only - every stage has its own, tighter limit
@@ -28,7 +33,8 @@ pipeline {
     environment {
         // macOS agents: Homebrew (mvn, k6, jq) and Docker Desktop's CLI, which lives in ~/.docker/bin when
         // Docker Desktop was installed "per user" - Jenkins does not read the login shell's PATH.
-        PATH = "/opt/homebrew/bin:/usr/local/bin:${env.HOME}/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:${env.PATH}"
+        // JDK 21 from "tools" first: Homebrew's own "java" in /opt/homebrew/bin must not win
+        PATH = "${env.JAVA_HOME}/bin:/opt/homebrew/bin:/usr/local/bin:${env.HOME}/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:${env.PATH}"
         BASE_URL = 'http://localhost:8081'
         UI_URL = 'http://localhost:5173'
         COMPOSE = 'docker compose --profile app'
@@ -45,6 +51,10 @@ pipeline {
                       command -v "$t" >/dev/null || { echo "MISSING TOOL: $t (PATH=$PATH)"; exit 1; }
                     done
                     java -version 2>&1 | head -1
+                    java -version 2>&1 | head -1 | grep -q '"21' || {
+                      echo "WRONG JAVA: the build must run on JDK 21 (as in GitHub Actions). Manage Jenkins > Tools > JDK installations: name 'jdk-21', JAVA_HOME = output of '/usr/libexec/java_home -v 21' (install: brew install --cask temurin@21)"
+                      exit 1
+                    }
                     # "docker version" waits forever when Docker Desktop hangs (build #19 sat here for 46 minutes):
                     # give it 60 seconds, then fail with a message that says what to do
                     docker version --format 'Docker {{.Server.Version}}' > docker-version.txt 2>&1 &
@@ -64,13 +74,13 @@ pipeline {
                 sh '''
                     [ "${RUN_UI:-true}" = "true" ] || exit 0
                     case "${BROWSER:-chrome}" in
-                      chrome)  app="Google Chrome" ;;
-                      firefox) app="Firefox" ;;
-                      edge)    app="Microsoft Edge" ;;
-                      safari)  app="Safari" ;;
+                      chrome)  app="Google Chrome";  cask=google-chrome ;;
+                      firefox) app="Firefox";        cask=firefox ;;
+                      edge)    app="Microsoft Edge"; cask=microsoft-edge ;;
+                      safari)  app="Safari";         cask="" ;;
                     esac
-                    if [ "$(uname)" = "Darwin" ] && [ ! -d "/Applications/$app.app" ]; then
-                      echo "BROWSER NOT INSTALLED: /Applications/$app.app is missing - install it (e.g. brew install --cask firefox) or choose another BROWSER"
+                    if [ "$(uname)" = "Darwin" ] && [ ! -d "/Applications/$app.app" ] && [ ! -d "$HOME/Applications/$app.app" ]; then
+                      echo "BROWSER NOT INSTALLED: $app.app is not in /Applications or ~/Applications - install it (brew install --cask $cask) or choose another BROWSER"
                       exit 1
                     fi
                     if [ "${BROWSER:-chrome}" = "safari" ]; then
