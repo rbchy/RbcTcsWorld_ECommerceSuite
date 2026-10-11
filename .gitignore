@@ -25,3 +25,4 @@ security/zap/openapi.json
 automation/.allure/
 qa-reports/
 docker-version.txt
+safaridriver.log

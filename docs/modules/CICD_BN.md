@@ -76,10 +76,11 @@ docker compose --profile app down              # বন্ধ (-v দিলে d
 - **কোথায় দেখবেন:** build পাতার বাম দিকে **QA Reports** link। একই পাতা `qa-reports/` নামে artifact হিসেবেও থাকে।
 - **একবার করতে হবে:**
   1. **HTML Publisher plugin install করুন:** Manage Jenkins → Plugins → Available plugins → `HTML Publisher` → Install। Plugin না থাকলেও build ভাঙবে না, শুধু link আসবে না।
-  2. **Allure আর Cucumber-এর জন্য JavaScript চালু করুন:** এ দুটো রিপোর্টের JavaScript লাগে, কিন্তু Jenkins-এর CSP সেটা আটকায়। Manage Jenkins → Script Console-এ চালান:
-     `System.setProperty("hudson.model.DirectoryBrowserSupport.CSP", "")`
-     এটা Jenkins restart না হওয়া পর্যন্ত থাকে।
-     - ⚠️ শুধু নিজের ব্যক্তিগত Jenkins-এ করবেন। শেয়ার করা Jenkins-এ Resource Root URL বা Allure Jenkins plugin ব্যবহার করুন।
+  2. **Allure আর Cucumber-এর জন্য JavaScript চালু করুন (স্থায়ী উপায়, Jenkins restart-এর পরেও থাকে):**
+     - এ দুটো রিপোর্টের JavaScript লাগে, কিন্তু Jenkins নিজের ঠিকানা থেকে দেখানো ফাইলে CSP দিয়ে JavaScript আটকায়। তাই পাতা সাদা দেখায়।
+     - **Manage Jenkins → System → Resource Root URL** ঘরে লিখুন `http://127.0.0.1:8080/` → **Save**।
+     - Jenkins-কে সবসময় `http://localhost:8080` দিয়ে খুলবেন। রিপোর্টগুলো তখন আলাদা ঠিকানা (`127.0.0.1`) থেকে আসে, যেখানে JavaScript চলতে পারে, অথচ Jenkins-এর নিজের পাতা সুরক্ষিত থাকে। এটাই Jenkins-এর সুপারিশ করা উপায়।
+     - পুরনো দ্রুত উপায়: Script Console-এ `System.setProperty("hudson.model.DirectoryBrowserSupport.CSP", "")`। এটা Jenkins restart হলে মুছে যায়, তাই restart-এর পরে রিপোর্ট আবার সাদা দেখায়।
 - **Dashboard পাতাটা নিজে CSP বদলানো ছাড়াই দেখা যায়:** এতে কোনো JavaScript বা inline CSS নেই।
 
 ## ৪. একটা আসল ঘটনা: নতুন critical CVE (ধাপ ৭ চলাকালীন)
@@ -142,6 +143,12 @@ GitHub ঘোষণা দিয়েছিল, ১৯ অক্টোবর �
   - **প্রতিটা stage-এর নিজের সময়সীমা** আছে। যেমন Tools ৩ মিনিট, PIT ২০ মিনিট, Automation ৩০ মিনিট, ZAP-সহ Security ৩০ মিনিট, Extra k6 ৬০ মিনিট (soak ৩০ মিনিট চলে)। আটকালে ঠিক সেই stage লাল হয়।
   - পুরো build-এর সীমা এখন ১২০ মিনিট, শুধু শেষ নিরাপত্তা জাল হিসেবে। এতে soak বাছলেও ভালো build "aborted" হয় না।
 - **হাতে কী করবেন:** Docker Desktop → Quit → আবার খুলুন → Terminal-এ `docker version` দিয়ে দেখে নিন, তারপর build চালান।
+
+### Browser আগেই যাচাই (build #21)
+- **কী হয়েছিল:** `BROWSER=safari` দিয়ে build চলেছিল, কিন্তু Safari-তে "Allow remote automation" চালু ছিল না। ২০টা UI টেস্ট প্রতিটা ~৪০ সেকেন্ড অপেক্ষা করে error দিয়েছিল, প্রায় ১২ মিনিট নষ্ট।
+- **এখন "Tools on the agent" stage আগেই যাচাই করে:**
+  - বাছাই করা browser Mac-এ install আছে কি না (`/Applications/...app`)।
+  - Safari হলে: আসল একটা WebDriver session খুলে বন্ধ করে দেখে। না পারলে কয়েক সেকেন্ডে build থামে, ঠিক কী চালু করতে হবে সেই বার্তাসহ।
 
 ## এখন CI-র gate-গুলো (প্রতিটা push-এ)
 1. Backend টেস্ট (২৮৪টা) আর JaCoCo coverage gate
