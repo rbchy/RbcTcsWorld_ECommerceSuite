@@ -1,21 +1,84 @@
-# RbcTcsWorld E-Commerce Suite
+<div align="center">
 
+# 🛒 RbcTcsWorld E-Commerce Suite
+
+### An Amazon-inspired online store built *to be tested*: Spring Boot 4 + React + PostgreSQL, with 1,489 automated tests behind 18 quality gates on every push
+
+[![Typing SVG](https://readme-typing-svg.demolab.com/?font=Fira+Code&size=18&pause=1500&color=F97316&center=true&vCenter=true&width=900&repeat=true&lines=Java+21+%C2%B7+Spring+Boot+4.1+%C2%B7+React+%C2%B7+PostgreSQL+16;1%2C489+tests+%C2%B7+18+%2F+18+quality+gates+%C2%B7+GitHub+Actions+%2B+Jenkins;97.3%25+line+coverage+%C2%B7+89.3%25+mutation+score+%C2%B7+129+%2F+129+requirements+traced)](https://git.io/typing-svg)
+
+<!-- ============ STATUS BAR ============ -->
 [![CI](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbchy/RbcTcsWorld_ECommerceSuite/actions/workflows/ci.yml)
-![Java 21](https://img.shields.io/badge/Java-21-blue)
-![Spring Boot 4.1](https://img.shields.io/badge/Spring%20Boot-4.1-green)
-![Tests](https://img.shields.io/badge/automated%20tests-1489-brightgreen)
-[![Coverage](https://img.shields.io/badge/line%20coverage-97.3%25-brightgreen)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/)
-[![Mutation](https://img.shields.io/badge/mutation%20score-89.3%25-brightgreen)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/mutation/)
-[![Allure](https://img.shields.io/badge/Allure-live%20report-orange)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/)
+![Tests](https://img.shields.io/badge/Tests-1%2C489%20%C2%B7%200%20failed-22c55e?style=for-the-badge&logo=checkmarx&logoColor=white)
+![Gates](https://img.shields.io/badge/Quality%20gates-18%20%2F%2018-22c55e?style=for-the-badge&logo=githubactions&logoColor=white)
+[![Coverage](https://img.shields.io/badge/Line%20coverage-97.3%25-22c55e?style=for-the-badge)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/coverage/)
+[![Mutation](https://img.shields.io/badge/Mutation%20score-89.3%25-22c55e?style=for-the-badge)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/mutation/)
+[![Allure](https://img.shields.io/badge/Allure-live%20report-FF6C37?style=for-the-badge)](https://rbchy.github.io/RbcTcsWorld_ECommerceSuite/)
+![License](https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge)
 
-An Amazon-inspired online store (catalog, cart, checkout with a delivery address, Stripe or mock payment, shipping,
-returns, reviews, wishlist, order e-mails, password reset by e-mail, guest checkout and an address book, size/colour variants, a faceted filter panel, flash deals with a countdown, "customers also bought", invoice PDFs, optional two-factor sign-in by e-mailed code, a saved-card wallet (tokens only), a store back office with customers, coupons,
-multi-warehouse inventory, reports, a payment ledger and advanced search, and an append-only audit trail inspired by 21 CFR Part 11 / ALCOA+)
-that I built **to be tested**: the application is the test object, and the real work is the test system around it.
-Every push goes through 18 quality gates in GitHub Actions; the same pipeline runs in Jenkins on a Mac.
-The public demo runs on one free cloud server with HTTPS ([deploy/](deploy/), guide: [ORACLE_CLOUD_BN](docs/deploy/ORACLE_CLOUD_BN.md)).
+![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Selenium](https://img.shields.io/badge/Selenium-4.49-43B02A?style=for-the-badge&logo=selenium&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-5%20targets-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
+![Appium](https://img.shields.io/badge/Appium-Android%20%2B%20iOS-662D91?style=for-the-badge&logo=appium&logoColor=white)
+![Cucumber](https://img.shields.io/badge/Cucumber-7-23D96C?style=for-the-badge&logo=cucumber&logoColor=white)
+![k6](https://img.shields.io/badge/k6-load-7D64FF?style=for-the-badge&logo=k6&logoColor=white)
+![OWASP ZAP](https://img.shields.io/badge/OWASP%20ZAP-DAST-00549E?style=for-the-badge)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Jenkins](https://img.shields.io/badge/Jenkins-pipeline-D24939?style=for-the-badge&logo=jenkins&logoColor=white)
 
-Author: **RB Chowdhury**, QA Automation Engineer / SDET - [GitHub](https://github.com/rbchy) · [LinkedIn](https://www.linkedin.com/in/rbchy/)
+![Last Commit](https://img.shields.io/github/last-commit/rbchy/RbcTcsWorld_ECommerceSuite?style=flat-square&color=f97316&label=Last%20commit)
+![Repo Size](https://img.shields.io/github/repo-size/rbchy/RbcTcsWorld_ECommerceSuite?style=flat-square&color=155e75&label=Repo%20size)
+![Merged PRs](https://img.shields.io/github/issues-pr-closed/rbchy/RbcTcsWorld_ECommerceSuite?style=flat-square&color=6d28d9&label=Closed%20PRs)
+
+</div>
+
+---
+
+## 📌 At a Glance
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**🙋 What this is**
+
+An Amazon-inspired online store with the features a real shop needs:
+- catalog, cart, and checkout with a delivery address;
+- Stripe or mock payment, shipping and returns;
+- reviews, wishlist, guest checkout, an address book, size/colour variants and a faceted filter;
+- flash deals, invoice PDFs, two-factor sign-in, and a saved-card wallet (tokens only);
+- a **store back office** with customers, coupons, multi-warehouse inventory, reports, a payment ledger, and an append-only **audit trail** inspired by 21 CFR Part 11 / ALCOA+.
+
+The application is the *test object*. The real work is the test system around it:
+
+- **unit → API → BDD → UI → phone** tests;
+- contract, accessibility, performance, DAST and dependency scans;
+- mutation testing;
+- a traceability matrix that fails the build when a requirement loses its last test.
+
+It runs on **GitHub Actions and on Jenkins** (Mac). A public demo runs on one free cloud server with HTTPS ([deploy/](deploy/), guide: [ORACLE_CLOUD_BN](docs/deploy/ORACLE_CLOUD_BN.md)).
+
+</td>
+<td width="50%" valign="top">
+
+**📍 Quick facts**
+
+| | |
+|---|---|
+| 🧪 **Tests** | 1,489: 772 backend · 444 API/DB/BDD/UI · 265 Playwright · 8 Appium |
+| 🚦 **Gates** | 18 / 18 green on `main` (10 Nov 2026) |
+| 📏 **Coverage** | 97.3 % lines · 94.2 % branches |
+| 🧬 **Mutation** | 89.3 % of 1,151 mutants killed |
+| 📋 **Requirements** | 129 / 129 traced to tests |
+| 🐞 **Defects logged** | 29, each with evidence, root cause, fix and regression test |
+| 🌍 **UI** | 6 languages · installable PWA · WCAG 2.1 AA |
+| 🔁 **CI** | GitHub Actions (5 workflows) + Jenkins on macOS ARM |
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -62,6 +125,25 @@ pie showData
 
 Every requirement links to its tests in the [traceability matrix](docs/qa/TRACEABILITY_MATRIX.md); CI fails if one has none.
 
+```mermaid
+xychart-beta
+    title "Tests executed per CI job (main, 10 Nov 2026)"
+    x-axis ["Backend", "API/DB/BDD/UI", "Playwright", "Docker smoke", "UI Firefox", "UI Edge", "Android", "iOS"]
+    y-axis "Tests" 0 --> 800
+    bar [772, 444, 265, 63, 59, 59, 4, 4]
+```
+
+<sub>Firefox and Edge rerun the 59 Selenium UI tests in other browsers, and the Docker job smoke-tests the containers. These runs are not counted again in the 1,489.</sub>
+
+```mermaid
+xychart-beta
+    title "Test-quality metrics (bars) vs the gate that fails the build (line), %"
+    x-axis ["Line coverage", "Branch coverage", "Mutation score"]
+    y-axis "Percent" 80 --> 100
+    bar [97.3, 94.2, 89.3]
+    line [97, 88, 84]
+```
+
 ## 📈 GitHub Stats
 
 <img src="docs/images/github-stats.svg" alt="GitHub stats: 217 commits on 18 active days since 4 October 2026, 50 merged pull requests, 0 open, 354 CI workflow runs, about 40k lines of code; Java 74.3 %, JavaScript 15.9 %, TypeScript 3.9 %, CSS 2.4 %, other 3.5 %" width="100%">
@@ -102,6 +184,83 @@ The badges update live from GitHub; the card above is a snapshot of the same day
 
 ---
 
+## 🏗️ System Architecture
+
+```mermaid
+flowchart LR
+    subgraph clients["Clients"]
+        B["Browser / PWA<br/>6 languages"]
+        PH["Phones<br/>Android Chrome · iOS Safari"]
+        ADM["Store admin<br/>back office"]
+    end
+    subgraph app["Application"]
+        FE["React + Vite storefront<br/>nginx"]
+        API["Spring Boot 4.1 API :8081<br/>Spring Security + JWT · OpenAPI"]
+    end
+    subgraph data["Data and services"]
+        PG[("PostgreSQL 16<br/>Flyway · CHECK constraints")]
+        RD[("Redis<br/>login lockout counters")]
+        MP["SMTP / Mailpit<br/>order + reset e-mails"]
+        PAY["Payments<br/>mock gateway · Stripe test mode"]
+    end
+    B --> FE
+    PH --> FE
+    ADM --> FE
+    FE -->|REST + Bearer token| API
+    API --> PG
+    API --> RD
+    API -->|transactional outbox| MP
+    API --> PAY
+    CADDY["Caddy (public demo)<br/>HTTPS, only 80/443"] -.-> FE
+```
+
+### 📦 Order lifecycle (the state machine the tests guard)
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> PLACED
+    PLACED --> PAID : pay
+    PLACED --> CANCELLED : cancel
+    PAID --> SHIPPED : ship
+    PAID --> CANCELLED : cancel (refund)
+    SHIPPED --> DELIVERED : deliver
+    DELIVERED --> RETURN_REQUESTED : request return
+    RETURN_REQUESTED --> RETURNED : approve (refund)
+    RETURN_REQUESTED --> DELIVERED : reject
+    RETURNED --> [*]
+    CANCELLED --> [*]
+```
+
+Every other move is rejected with **409** (`OrderStatus.ALLOWED`), and a DB CHECK constraint backs it up. DEF-013 was a test that *looked* like it guarded "a paid order cannot be paid again" but would have passed even if the card were charged. Mutation testing found it.
+
+### 🛒 Checkout through the API
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Customer (UI / test)
+    participant API as Spring Boot API
+    participant DB as PostgreSQL
+    participant PAY as Payment gateway
+    participant MAIL as Mail outbox
+    C->>API: POST /api/auth/login
+    API-->>C: access + refresh token
+    C->>API: POST /api/cart/items {product, qty}
+    C->>API: POST /api/checkout/quote {address, coupon}
+    API-->>C: subtotal, discount, tax, shipping, total
+    C->>API: POST /api/orders {coupon, shipping address}
+    API->>DB: atomic conditional UPDATE stock (never below 0) + order PLACED
+    API-->>C: 201 PLACED
+    C->>API: POST /api/orders/{id}/pay {card}
+    API->>PAY: charge (approved / declined / insufficient funds)
+    API->>DB: order PAID, payment ledger row, audit entry
+    API->>MAIL: order confirmation (outbox)
+    API-->>C: 200 PAID, or 400 bad card / 402 declined / 409 not payable
+```
+
+---
+
 ## Quality gates
 
 A gate fails the build. Nothing is "reported only" unless the table says so.
@@ -118,7 +277,7 @@ A gate fails the build. Nothing is "reported only" unless the table says so.
 | 8 | Cross-browser | 100 % pass | 59 / 59 in Firefox and Edge | Selenium, CI matrix |
 | 9 | Performance | SLO thresholds (p95, error rate, no overselling) | p95 16-72 ms, 0 % errors; JMeter 100 users p95 77 ms | k6, JMeter (manual workflow) |
 | 10 | DAST | 0 Medium / High | 0 | OWASP ZAP API scan |
-| 11 | Dependencies | 0 known vulnerabilities, 0 open exceptions | 0 (complete SBOMs, self-test passed) | OSV-Scanner on CycloneDX SBOMs |
+| 11 | Dependencies | 0 critical (CVSS >= 9) and 0 open exceptions; lower severities are reported as warnings | 0 critical; 0 of any severity after the 10 Nov upgrade (complete SBOMs, self-test passed) | OSV-Scanner on CycloneDX SBOMs + npm lockfile |
 | 12 | Containers | stack healthy, smoke tests pass | 63 / 63 | Docker Compose |
 | 13 | Traceability | every requirement has a test | 129 / 129 | `docs/qa/check_rtm.py` |
 | 14 | Pipeline definition | Jenkinsfile valid | validated by a real Jenkins | declarative linter |
@@ -223,6 +382,23 @@ All entries are in [Defect Reports](docs/qa/DEFECT_REPORTS.md). A selection:
 | DEF-018 | axe-core (written first) | All 8 pages failed WCAG 2.1 AA (contrast, labels, page language) | 0 serious / critical |
 | DEF-020 | Jenkins on macOS | Edge / Firefox drivers could not be downloaded | Selenium 4.25 -> 4.49 |
 | DEF-021 | Runner canary | The dependency scan itself went blind on a rate limit and missed a CVSS 9.1 library | SBOM-based scan with completeness check and self-test |
+
+```mermaid
+pie showData title 29 logged defects by severity
+    "Critical" : 1
+    "High" : 8
+    "Medium" : 15
+    "Low" : 5
+```
+
+```mermaid
+pie showData title 29 logged defects by where the fault was
+    "Product (the shop)" : 14
+    "Test code" : 8
+    "Test infrastructure / reporting" : 7
+```
+
+<sub>Half of the defects were in the tests or the pipeline, not the shop. Each one would have hidden a real problem (a test that could never fail, a scan that went blind, a report that said "passed" for a failed build), so each got the same report, root cause and regression test as a product bug.</sub>
 
 Two critical Spring CVEs had no patch for Spring Boot 3.5. They were accepted for a limited time (reason,
 expiry date, guard test) and then removed by upgrading to Spring Boot 4.1 on a branch. The gates caught
@@ -366,3 +542,38 @@ After a pull: right-click the project -> Maven -> Update Project.
 
 No test suite proves the absence of defects. This one is built to find the expensive ones early,
 show the evidence, and make the release decision explicit.
+
+---
+
+## 🔗 Related Projects
+
+| Project | Stack |
+|---|---|
+| 💊 [PharmaPack QMS — Serialization & Line Control](https://github.com/rbchy/RbcTcsWorld_PharmaPackQMS_Serialization) | Spring Boot · React · L3 serialization · 78 / 78 in CI |
+| 💊 [PharmaPack QMS](https://github.com/rbchy/RbcTcsWorld_PharmaPackQMS) | Spring Boot QMS: AQL, deviations, CAPA · CI |
+| ☕ [Bhojanaloy POS](https://github.com/rbchy/BhojanAloy-Food-Coffee-Shop-POS-System) | Java Swing + Spring Boot · MySQL · 76 / 76 in CI |
+| 🏔️ [NorthFace × Automation Exercise BDD](https://github.com/rbchy/NorthFace_AutomationExercise-BDD-Test-Automation) | Selenium · Cucumber · RestAssured · CI |
+| 📱 [WDIO Native Demo App – Appium](https://github.com/rbchy/WebdriverIO-Native-DemoApp-MobileTestAutomationJavaAppiumTestNG) | Appium 2 · TestNG · Android emulator in CI |
+
+<sub>All projects: [github.com/rbchy](https://github.com/rbchy)</sub>
+
+---
+
+## 👤 Author
+
+<div align="center">
+
+**Ranajit Baran Chowdhury (RB Chowdhury)**
+QA Automation Engineer / SDET · West Norriton, Pennsylvania, USA
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/rbchy/)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/rbchy)
+[![Website](https://img.shields.io/badge/Website-rbchy.github.io%2Frbchy-0d9488?style=for-the-badge&logo=githubpages&logoColor=white)](https://rbchy.github.io/rbchy/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-Website-blueviolet?style=for-the-badge&logo=wix&logoColor=white)](https://rbc6543.wixsite.com/rbc-portfolio)
+[![Gmail](https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:chyranajit@gmail.com)
+
+<sub>MIT licensed — see [LICENSE](LICENSE).</sub>
+
+⭐ *If this project helps you, a star on the repo is appreciated.*
+
+</div>
