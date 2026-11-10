@@ -54,6 +54,16 @@
       <dependency><groupId>org.freemarker</groupId><artifactId>freemarker</artifactId><version>2.3.35</version></dependency>
       <!-- json-schema-validator -> json-schema-core: Rhino, CVSS 2.7 (GHSA-3w8q-xq97-5j7x); 1.7.x line stays API compatible -->
       <dependency><groupId>org.mozilla</groupId><artifactId>rhino</artifactId><version>1.7.15.1</version></dependency>
+      <!-- Selenium -> guava: GHSA-xxph-c9ww-hj94, CVSS 8.2 (reported by the OSV gate on 10 Nov 2026) -->
+      <dependency><groupId>com.google.guava</groupId><artifactId>guava</artifactId><version>33.7.2-jre</version></dependency>
+      <!-- Selenium -> OpenTelemetry: GHSA-ccrj-gw8r-854m, CVSS 5.3; the BOM keeps every opentelemetry-* artifact on one version -->
+      <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-bom</artifactId>
+        <version>1.67.0</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
